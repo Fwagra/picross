@@ -17,15 +17,13 @@ export default {
         updateCell() {
             this.$emit('update-cell', this.rowIndex, this.columnIndex);
         },
-        test() {
-            console.log('test');
-        }
     }
 }
 </script>
 <style scoped>
 .cell {
     padding: 1rem;
+    cursor: pointer;
 }
 .cell::before {
 

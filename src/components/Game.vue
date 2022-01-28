@@ -1,17 +1,21 @@
 <template>
     <Grid @updateCell="updateGrid"></Grid>
+    <Tools :colors='colors' :currentColor="currentColor" @addColor="addColor"></Tools>
 </template>
 
 <script>
 
 import Grid from './Grid.vue';
+import Tools from './Tools.vue';
 
 export default {
     components: {
-        Grid
+        Grid,
+        Tools
     },
     data() {
         return {
+            editMode: true,
             gridColumuns: 5,
             gridRows: 5,
             grid: [],
@@ -19,7 +23,8 @@ export default {
                 rows: [],
                 columns: [],
             },
-            colors: ['red', 'green', 'blue'],
+            colors: ['#000', '#F0F'],
+            currentColor: 0,
         }
     },
     computed: {
@@ -29,12 +34,16 @@ export default {
     },
     provide() {
         return {
+            editMode: this.editMode,
             gridColumuns: this.gridColumuns,
             gridRows: this.gridRows,
             grid: this.grid,
             colors: this.colors,
+            currentColor: this.currentColor,
             hints: this.hints,
-            updateGrid: this.updateGrid
+            updateGrid: this.updateGrid,
+            updateColors: this.updateColors,
+            updateCurrentColor: this.updateCurrentColor,
         }
     },
     mounted() {
@@ -72,7 +81,7 @@ export default {
         },
          updateGrid(rowIndex, columnIndex) {
             // Update the grid array with the new color
-            this.grid[rowIndex][columnIndex] = Math.floor(Math.random() * this.colors.length);
+            this.grid[rowIndex][columnIndex] = this.currentColor;
         },
         // Get the differences between the old and new grid
         getGridDifferences(newGrid, oldGrid) {
@@ -139,6 +148,15 @@ export default {
                 cellHints.push(colorHints);
             }
             return cellHints;
+        },
+        updateColors(colorIndex, newColor) {
+            this.colors[colorIndex] = newColor;
+        },
+        updateCurrentColor(color) {
+            this.currentColor = color;
+        },
+        addColor() {
+            this.colors.push("#000");
         }
     }
 }

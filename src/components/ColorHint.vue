@@ -7,12 +7,14 @@ export default {
     inject: ['colors'],
     data() {
         return {
-            style: {
-                color: this.colors[this.color]
             }
-        }
     },
     computed: {
+        style() {
+            return {
+                color: this.colors[this.color]
+            }
+        },
         isContiguous() {
             return this.hint.contiguous && this.hint.number > 1;
         }
