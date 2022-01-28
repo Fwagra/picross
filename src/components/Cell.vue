@@ -1,20 +1,24 @@
 <template>
-    <div class="cell" @mousedown="this.updateCell" :style="style"></div>
+    <div class="cell" v-touch:press="this.updateCell"  :style="style"></div>
 </template>
 
 <script>
 export default {
+    inject: ['colors'],
     props: ['color', 'rowIndex', 'columnIndex'],
     computed: {
         style() {
             return {
-                backgroundColor: this.color
+                backgroundColor: this.colors[this.color]
             }
         }
     },
     methods: {
         updateCell() {
             this.$emit('update-cell', this.rowIndex, this.columnIndex);
+        },
+        test() {
+            console.log('test');
         }
     }
 }
