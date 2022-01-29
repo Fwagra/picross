@@ -10,8 +10,8 @@
 
 <script>
 export default {
-    inject: ['updateColors', 'updateCurrentColor', 'editMode'],
-    props: ['color', 'colorIndex'],
+    inject: ['updateColors', 'updateCurrentColor'],
+    props: ['color', 'colorIndex', 'editMode'],
     methods: {
         changedColor (event) {
             this.updateColors(event.target.dataset.color, event.target.value);

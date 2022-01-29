@@ -1,11 +1,12 @@
 <template>
-    <Grid @updateCell="updateGrid" :gridRows="gridRows" :gridColumns="gridColumns"></Grid>
+    <Grid @updateCell="updateGrid" :gridRows="gridRows" :colors="colors" :gridColumns="gridColumns" :hints="hints" :errors="errors"></Grid>
     <Tools :colors='colors' 
            :currentColor="currentColor" 
            :gridRows="gridRows"
            :gridColumns="gridColumns"
            :isFilled="isFilled"
            :shareLink="shareLink"
+           :editMode="editMode"
            @removeColor="removeColor" 
            @addColor="addColor" 
            @updateRows="updateRows"
@@ -19,6 +20,7 @@
 import Grid from './Grid.vue';
 import Tools from './Tools.vue';
 import JSONCrush from 'jsoncrush';
+import { computed } from 'vue';
 
 export default {
     components: {
@@ -31,7 +33,12 @@ export default {
             gridColumns: 5,
             gridRows: 5,
             grid: [],
+            correctGrid: [],
             hints: {
+                rows: [],
+                columns: [],
+            },
+            errors: {
                 rows: [],
                 columns: [],
             },
@@ -48,7 +55,7 @@ export default {
             return JSON.stringify(this.colors);
         },
         isFilled() {
-            return this.grid.every(row => row.every(cell => cell !== ''));
+            return this.editMode ? this.grid.every(row => row.every(cell => cell !== '')) : true;
         },
     },
     provide() {
@@ -57,7 +64,7 @@ export default {
             gridColumns: this.gridColumns,
             gridRows: this.gridRows,
             grid: this.grid,
-            colors: this.colors,
+            colors: computed(() => this.colors),
             currentColor: this.currentColor,
             hints: this.hints,
             updateGrid: this.updateGrid,
@@ -66,8 +73,11 @@ export default {
         }
     },
     mounted() {
+        // Check if we are playing or editing
+        this.checkMode();
         // Generate the grid array with the correct number of rows and columns
         this.generateGrid();
+
     },
     watch: {
         // When the grid is updated, update the grid hints
@@ -91,34 +101,38 @@ export default {
            this.refreshHints();  
         },
         gridRows(newRows, oldRows) {
-            const difference = newRows - oldRows;
+            if(this.editMode) {
+                const difference = newRows - oldRows;
 
-            if(difference > 0) {
-                for(let i = 0; i < difference; i++) {
-                    this.grid.push([...Array(this.gridColumns).fill('')]);
+                if(difference > 0) {
+                    for(let i = 0; i < difference; i++) {
+                        this.grid.push([...Array(this.gridColumns).fill('')]);
+                    }
+                } else if(difference < 0) {
+                    for(let i = 0; i < Math.abs(difference); i++) {
+                        this.grid.pop();
+                    }
                 }
-            } else if(difference < 0) {
-                for(let i = 0; i < Math.abs(difference); i++) {
-                    this.grid.pop();
-                }
+                // if the grid's size has changed, force the update of the hints
+                this.refreshHints();
             }
-            // if the grid's size has changed, force the update of the hints
-            this.refreshHints();
         },
         gridColumns(newColumns, oldColumns) {
-            const difference = newColumns - oldColumns;
-            console.log(difference);
-            if(difference > 0) {
-                for(let i = 0; i < this.grid.length; i++) {
-                    this.grid[i] = [...this.grid[i], ...Array(difference).fill('')];
+            if(this.editMode) {
+
+                const difference = newColumns - oldColumns;
+                if(difference > 0) {
+                    for(let i = 0; i < this.grid.length; i++) {
+                        this.grid[i] = [...this.grid[i], ...Array(difference).fill('')];
+                    }
+                } else if(difference < 0) {
+                    for(let i = 0; i < this.grid.length; i++) {
+                        this.grid[i].splice(difference);
+                    }
                 }
-            } else if(difference < 0) {
-                for(let i = 0; i < this.grid.length; i++) {
-                    this.grid[i].splice(difference);
-                }
+                // if the grid's size has changed, force the update of the hints
+                this.refreshHints();
             }
-            // if the grid's size has changed, force the update of the hints
-            this.refreshHints();
         },
         isFilled(filled) {
             if(filled) {
@@ -130,6 +144,20 @@ export default {
 
     },
     methods: {
+        checkMode() {
+            const params =  new URLSearchParams(document.location.search);
+            this.editMode = !params.has('g');
+
+            if(!this.editMode) {
+                let dataURL = document.location.href.split('?g=')[1];
+                const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)));
+                this.correctGrid = data.grid;
+                this.gridRows = data.rows;
+                this.gridColumns = data.columns;
+                this.colors = data.colors;
+                this.hints = data.hints;
+            }
+        },
         // Generate the grid array with the correct number of rows and columns
         generateGrid() {
             for (let i = 0; i < this.gridRows; i++) {
@@ -164,29 +192,77 @@ export default {
         },
         // Update the hints for the provided rows and columns 
         updateHints(rowsToUpdate, columnsToUpdate) {
-            if(rowsToUpdate.length !== 0) {
-                for (const rowIndex  of rowsToUpdate) {
-                    this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
+            if(this.editMode) {
+
+                if(rowsToUpdate.length !== 0) {
+                    for (const rowIndex  of rowsToUpdate) {
+                        this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
+                    }
                 }
-            }
-            if(columnsToUpdate.length !== 0) {
-                for (const columnIndex of columnsToUpdate) {
-                    this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
+                if(columnsToUpdate.length !== 0) {
+                    for (const columnIndex of columnsToUpdate) {
+                        this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
+                    }
                 }
+            }else {
+                this.checkHints({rows: rowsToUpdate, columns: columnsToUpdate});
             }
         },
         refreshHints() {
-            for (let rowIndex = 0; rowIndex < this.gridRows; rowIndex++) {
-                this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
-            }
-            for (let columnIndex = 0; columnIndex < this.gridColumns; columnIndex++) {
-                this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
+            if(this.editMode) {
+
+                for (let rowIndex = 0; rowIndex < this.gridRows; rowIndex++) {
+                    this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
+                }
+                for (let columnIndex = 0; columnIndex < this.gridColumns; columnIndex++) {
+                    this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
+                }
+
+                // Trim the hints from removed rows/columns
+                this.hints.rows = this.hints.rows.slice(0, this.gridRows);
+                this.hints.columns = this.hints.columns.slice(0, this.gridColumns);
             }
 
-            // Trim the hints from removed rows/columns
-            this.hints.rows = this.hints.rows.slice(0, this.gridRows);
-            this.hints.columns = this.hints.columns.slice(0, this.gridColumns);
+        },
+        // Check if the player's moves match the hints
+        checkHints(rowsAndColumns) {
 
+            for (const type in rowsAndColumns) {
+                const arrayToCheck = rowsAndColumns[type];
+
+                if(arrayToCheck.length !== 0) {
+                    for (const arrayIndex  of arrayToCheck) {
+
+                    this.errors[type][arrayIndex] = false;
+
+
+                    for(const color in this.hints[type][arrayIndex]) {
+                        const actualGridElement = type === 'rows' ? this.grid[arrayIndex] : this.getColumnCells(arrayIndex);
+                        const actualColors = this.getHintsForColor(color, actualGridElement);
+
+                        // Debug log
+                        // console.log(type + " " + arrayIndex + " color" + color + " actual : " + actualColors.number + " expected : " + this.hints[type][arrayIndex][color].number);
+
+                        // Determine if the number must be displayed (we hide the hints if the colors are placed in a pattern that matchs the hints)
+                        if(
+                            actualColors.number === this.hints[type][arrayIndex][color].number &&
+                            actualColors.contiguous === this.hints[type][arrayIndex][color].contiguous
+                        ) {
+                            this.hints[type][arrayIndex][color].correct = true;
+                        } else {
+                            this.hints[type][arrayIndex][color].correct = false;
+                        }
+
+                        // Determine if the line contains an error
+                        if(actualColors.number > this.hints[type][arrayIndex][color].number) {
+                            this.errors[type][arrayIndex] = true;
+                        } else if(actualColors.number === this.hints[type][arrayIndex][color].number && this.hints[type][arrayIndex][color].contiguous !== actualColors.contiguous){
+                            this.errors[type][arrayIndex] = true;
+                        }
+                    }
+                }
+                }
+            }
         },
         // Get the cells in the provided column
         getColumnCells(columnIndex) {
@@ -195,32 +271,35 @@ export default {
         getHints(cells) {
             const cellHints = [];
             for (const color in this.colors) {
-                const colorHints = {
-                    number: 0,
-                    contiguous: true
-                };
-
-                
-                let lastIndex = null;
-
-                for (const cellIndex in cells) {
-                    if (cells[cellIndex] == color) {
-                        colorHints.number++;
-
-                        // Check if the cell is contiguous
-                        if (lastIndex !== null) {
-                            if (cellIndex - lastIndex !== 1) {
-                                colorHints.contiguous = false;
-                            }
-                        }
-
-                        lastIndex = cellIndex;
-                    }
-                }
-
-                cellHints.push(colorHints);
+                cellHints.push(this.getHintsForColor(color, cells));
             }
             return cellHints;
+        },
+        getHintsForColor(color, cells) {
+
+            const colorHints = {
+                number: 0,
+                contiguous: true
+            };
+            
+            let lastIndex = null;
+
+            for (const cellIndex in cells) {
+                if (cells[cellIndex] == color) {
+                    colorHints.number++;
+
+                    // Check if the cell is contiguous
+                    if (lastIndex !== null) {
+                        if (cellIndex - lastIndex !== 1) {
+                            colorHints.contiguous = false;
+                        }
+                    }
+
+                    lastIndex = cellIndex;
+                }
+            }
+
+            return colorHints;
         },
         updateColors(colorIndex, newColor) {
             this.colors[colorIndex] = newColor;
@@ -281,8 +360,7 @@ export default {
             };
 
             // JSONCrush higly compresses a JSON string
-            const encodedData = JSONCrush.crush(JSON.stringify(data));
-            
+            const encodedData = encodeURI(JSONCrush.crush(JSON.stringify(data)));
             return `${window.location.origin}?g=${encodedData}`;
         
         }

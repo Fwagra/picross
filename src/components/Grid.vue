@@ -1,9 +1,9 @@
 <template>
     <div class="grid" :style="gridStyles">
         <div class="cell"></div>
-        <Hints class="col-hints" v-for="(hint, hintIndex) in hints.columns" :hint="hint" :key="hintIndex"></Hints>
+        <Hints class="col-hints" v-for="(hint, hintIndex) in hints.columns" :hint="hint" :error="errors.columns[hintIndex]" :key="hintIndex"></Hints>
         <template v-for="(row, rowIndex) in this.grid" :key="rowIndex">
-            <Hints class="row-hints" :hint="hints.rows[rowIndex]"></Hints>
+            <Hints class="row-hints" :hint="hints.rows[rowIndex]" :error="errors.rows[rowIndex]"></Hints>
             <Cell @updateCell="updateGrid"  v-for="(column, columnIndex) in row" :rowIndex="rowIndex" :columnIndex="columnIndex" :color="this.grid[rowIndex][columnIndex]" :key="columnIndex"></Cell>
         </template>
     </div>
@@ -18,8 +18,8 @@ export default {
         Cell,
         Hints
     },
-    inject: [ 'grid', 'colors', 'updateGrid', 'hints'],
-    props: ['gridRows', 'gridColumns'],
+    inject: [ 'grid', 'updateGrid'],
+    props: ['gridRows',  'gridColumns','colors', 'hints', 'errors'],
     computed: {
         gridStyles() {
             return {

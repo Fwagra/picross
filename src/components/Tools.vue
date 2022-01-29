@@ -1,7 +1,7 @@
 <template>
     <div class="current-color" :style="{backgroundColor: getCurrentColor}"></div>
     <div class="eraser tool-btn"  @click="updateCurrentColor('')">Gomme</div>
-    <color-tool v-for="(color, colorIndex) in colors" :key="colorIndex" :color="color" :colorIndex="colorIndex"></color-tool>
+    <color-tool v-for="(color, colorIndex) in colors" :key="colorIndex" :color="color" :colorIndex="colorIndex" :editMode="editMode"></color-tool>
     <template v-if="editMode">
         <div  class="add-color tool-btn" @click="$emit('addColor')" v-if="colors.length < 5">Ajouter</div>
         <div  class="delete-color tool-btn" @click="$emit('removeColor')" v-if="colors.length > 2">Supprimer</div>
@@ -24,8 +24,8 @@ export default {
         ColorTool
     },
     emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor'],
-    inject: ['editMode', 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink"],
+    inject: [ 'updateCurrentColor'],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
