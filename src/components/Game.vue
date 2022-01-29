@@ -3,7 +3,9 @@
     <Tools :colors='colors' 
            :currentColor="currentColor" 
            :gridRows="gridRows"
-           :gridColumns="gridColumns" 
+           :gridColumns="gridColumns"
+           :isFilled="isFilled"
+           :shareLink="shareLink"
            @removeColor="removeColor" 
            @addColor="addColor" 
            @updateRows="updateRows"
@@ -16,6 +18,7 @@
 
 import Grid from './Grid.vue';
 import Tools from './Tools.vue';
+import JSONCrush from 'jsoncrush';
 
 export default {
     components: {
@@ -34,6 +37,7 @@ export default {
             },
             colors: ['#000', '#F0F'],
             currentColor: 0,
+            shareLink: '',
         }
     },
     computed: {
@@ -42,7 +46,10 @@ export default {
         },
         stringifiedColors() {
             return JSON.stringify(this.colors);
-        }
+        },
+        isFilled() {
+            return this.grid.every(row => row.every(cell => cell !== ''));
+        },
     },
     provide() {
         return {
@@ -112,6 +119,13 @@ export default {
             }
             // if the grid's size has changed, force the update of the hints
             this.refreshHints();
+        },
+        isFilled(filled) {
+            if(filled) {
+                this.shareLink = this.getShareLink();
+            }else {
+                this.shareLink = '';
+            }
         }
 
     },
@@ -256,6 +270,22 @@ export default {
                 }
             }
         },
+        getShareLink() {
+    
+            const data = {
+                grid: this.grid,
+                colors: this.colors,
+                rows: this.gridRows,
+                columns: this.gridColumns,
+                hints: this.hints
+            };
+
+            // JSONCrush higly compresses a JSON string
+            const encodedData = JSONCrush.crush(JSON.stringify(data));
+            
+            return `${window.location.origin}?g=${encodedData}`;
+        
+        }
    
     }
 }

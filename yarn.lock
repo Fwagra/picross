@@ -5250,6 +5250,11 @@
   dependencies:
     "minimist" "^1.2.5"
 
+"jsoncrush@^1.1.6":
+  "integrity" "sha512-oLNi8zgT872yK7BBNM9r2Q3BAUf8Uuq+fbP0KZU5GISA87thlzHRqWkk3FcetUmMeW7MrPNLPtpZ0h/AZFFrNw=="
+  "resolved" "https://registry.npmjs.org/jsoncrush/-/jsoncrush-1.1.6.tgz"
+  "version" "1.1.6"
+
 "jsonfile@^4.0.0":
   "integrity" "sha1-h3Gq4HmbZAdrdmQPygWPnBDjPss="
   "resolved" "https://registry.npmjs.org/jsonfile/-/jsonfile-4.0.0.tgz"

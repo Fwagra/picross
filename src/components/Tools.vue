@@ -10,6 +10,9 @@
         <label for="cols">Colonnes : </label>
         <input type="number" id="cols" min="3" max="15" :value="gridColumns" @change="$emit('updateCols', $event.target.value)">
         <div class="fill-color tool-btn" @click="$emit('fillColor')">Remplir</div>
+        <div  @[isFilled&&`click`]="share = !share" class="share">Partager mon Picross</div>
+        <input v-if="share" type="text" :value="shareLink" class="code">
+        
     </template>
 </template>
 <script>
@@ -22,12 +25,17 @@ export default {
     },
     emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor'],
     inject: ['editMode', 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns'],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
+        },
+    },
+    data() {
+        return {
+            share: false
         }
-    }
+    },
 }
 </script>
 
