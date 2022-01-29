@@ -18,11 +18,11 @@ export default {
         Cell,
         Hints
     },
-    inject: ['gridColumuns', 'gridRows', 'grid', 'colors', 'updateGrid', 'hints'],
+    inject: ['gridColumns', 'gridRows', 'grid', 'colors', 'updateGrid', 'hints'],
     data() {
         return {
             gridStyles: {
-                gridTemplateColumns: `repeat(${this.gridColumuns + 1}, 1fr)`,
+                gridTemplateColumns: `repeat(${this.gridColumns + 1}, 1fr)`,
                 gridTemplateRows: `repeat(${this.gridRows + 1}, 1fr)`,
             }
         }

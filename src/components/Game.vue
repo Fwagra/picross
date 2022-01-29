@@ -1,6 +1,13 @@
 <template>
     <Grid @updateCell="updateGrid"></Grid>
-    <Tools :colors='colors' :currentColor="currentColor" @addColor="addColor"></Tools>
+    <Tools :colors='colors' 
+           :currentColor="currentColor" 
+           :gridRows="gridRows"
+           :gridColumns="gridColumns" 
+           @removeColor="removeColor" 
+           @addColor="addColor" 
+           @updateRows="updateRows"
+    ></Tools>
 </template>
 
 <script>
@@ -16,7 +23,7 @@ export default {
     data() {
         return {
             editMode: true,
-            gridColumuns: 5,
+            gridColumns: 5,
             gridRows: 5,
             grid: [],
             hints: {
@@ -30,12 +37,15 @@ export default {
     computed: {
         stringifiedGrid() {
             return JSON.stringify(this.grid);
+        },
+        stringifiedColors() {
+            return JSON.stringify(this.colors);
         }
     },
     provide() {
         return {
             editMode: this.editMode,
-            gridColumuns: this.gridColumuns,
+            gridColumns: this.gridColumns,
             gridRows: this.gridRows,
             grid: this.grid,
             colors: this.colors,
@@ -52,7 +62,7 @@ export default {
     },
     watch: {
         // When the grid is updated, update the grid hints
-        // Watch the stringified computed property so that we can compare the old and new grid (using the original data (array), newGrid and oldGrid are the identical)
+        // Watch the stringified computed property so that we can compare the old and new grid (using the original data (array), newGrid and oldGrid are the identical since objects are passed by reference)
         stringifiedGrid: {
             handler(stringNewGrid, stringOldGrid) {
 
@@ -66,7 +76,26 @@ export default {
                 this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
             },
             deep: true
-        }
+        },
+        stringifiedColors() {
+            //Update the hints when the colors are updated
+           this.refreshHints();  
+        },
+        gridRows(newRows, oldRows) {
+            const difference = newRows - oldRows;
+
+            if(difference > 0) {
+                for(let i = 0; i < difference; i++) {
+                    this.grid.push([...Array(this.gridColumns).fill('')]);
+                }
+            } else if(difference < 0) {
+                for(let i = 0; i < Math.abs(difference); i++) {
+                    this.grid.pop();
+                }
+            }
+            // if the grid's size has changed, force the update of the hints
+            this.refreshHints();
+        },
 
     },
     methods: {
@@ -74,7 +103,7 @@ export default {
         generateGrid() {
             for (let i = 0; i < this.gridRows; i++) {
                 this.grid[i] = [];
-                for (let j = 0; j < this.gridColumuns; j++) {
+                for (let j = 0; j < this.gridColumns; j++) {
                     this.grid[i][j] = "";
                 }
             }
@@ -89,7 +118,7 @@ export default {
             let columnsToUpdate = [];
             for (let rowIndex = 0; rowIndex < newGrid.length; rowIndex++) {
                 for (let colIndex = 0; colIndex < newGrid[rowIndex].length; colIndex++) {
-                    if (oldGrid.length === 0 || newGrid[rowIndex][colIndex] !== oldGrid[rowIndex][colIndex]) {
+                    if (oldGrid.length === 0 || oldGrid[rowIndex] === undefined || newGrid[rowIndex][colIndex] !== oldGrid[rowIndex][colIndex]) {
 
                         if(!rowsToUpdate.includes(rowIndex)) {
                             rowsToUpdate.push(rowIndex);
@@ -114,6 +143,19 @@ export default {
                     this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
                 }
             }
+        },
+        refreshHints() {
+            for (let rowIndex = 0; rowIndex < this.gridRows; rowIndex++) {
+                this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
+            }
+            for (let columnIndex = 0; columnIndex < this.gridColumns; columnIndex++) {
+                this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
+            }
+
+            // Trim the hints from removed rows/columns
+            this.hints.rows = this.hints.rows.slice(0, this.gridRows);
+            this.hints.columns = this.hints.columns.slice(0, this.gridColumns);
+
         },
         // Get the cells in the provided column
         getColumnCells(columnIndex) {
@@ -156,8 +198,30 @@ export default {
             this.currentColor = color;
         },
         addColor() {
-            this.colors.push("#000");
-        }
+            this.colors.push("#" + Math.floor(Math.random()*16777215).toString(16));
+            this.updateCurrentColor(this.colors.length - 1);
+        },
+        // Remove the last color from colors list
+        removeColor() {
+            const removedColor = this.colors.length - 1;
+            this.colors.pop();
+            this.removeColorFromGrid(removedColor);
+            this.updateCurrentColor(this.colors.length - 1);
+        },
+        //Remove the provided color from the grid
+        removeColorFromGrid(color) {
+            for (const rowIndex in this.grid) {
+                for (const colIndex in this.grid[rowIndex]) {
+                    if (this.grid[rowIndex][colIndex] == color) {
+                        this.grid[rowIndex][colIndex] = "";
+                    }
+                }
+            }
+        },
+        updateRows(newRowsNumber) {
+            this.gridRows = Number(newRowsNumber);
+        },
+   
     }
 }
 </script>
