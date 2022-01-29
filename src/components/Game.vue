@@ -8,6 +8,7 @@
            @addColor="addColor" 
            @updateRows="updateRows"
            @updateCols="updateCols"
+           @fillColor="fillColor"
     ></Tools>
 </template>
 
@@ -244,6 +245,15 @@ export default {
             const newColsNumber = Number(newColsString);
             if(newColsNumber >= 3 && newColsNumber <= 20) {
                 this.gridColumns = newColsNumber;
+            }
+        },
+        fillColor() {
+            for (const rowIndex in this.grid) {
+                for (const colIndex in this.grid[rowIndex]) {
+                    if(this.grid[rowIndex][colIndex] === "") {
+                        this.grid[rowIndex][colIndex] = this.currentColor;
+                    }
+                }
             }
         },
    
