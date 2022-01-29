@@ -12,6 +12,7 @@
            @updateRows="updateRows"
            @updateCols="updateCols"
            @fillColor="fillColor"
+           @updateShareLink="updateShareLink"
     ></Tools>
 </template>
 
@@ -134,13 +135,6 @@ export default {
                 this.refreshHints();
             }
         },
-        isFilled(filled) {
-            if(filled) {
-                this.shareLink = this.getShareLink();
-            }else {
-                this.shareLink = '';
-            }
-        }
 
     },
     methods: {
@@ -363,7 +357,10 @@ export default {
             const encodedData = encodeURI(JSONCrush.crush(JSON.stringify(data)));
             return `${window.location.origin}?g=${encodedData}`;
         
-        }
+        },
+        updateShareLink() {
+            this.shareLink = this.getShareLink();
+        },
    
     }
 }
