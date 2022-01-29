@@ -18,15 +18,17 @@ export default {
         Cell,
         Hints
     },
-    inject: ['gridColumns', 'gridRows', 'grid', 'colors', 'updateGrid', 'hints'],
-    data() {
-        return {
-            gridStyles: {
-                gridTemplateColumns: `repeat(${this.gridColumns + 1}, 1fr)`,
-                gridTemplateRows: `repeat(${this.gridRows + 1}, 1fr)`,
+    inject: [ 'grid', 'colors', 'updateGrid', 'hints'],
+    props: ['gridRows', 'gridColumns'],
+    computed: {
+        gridStyles() {
+            return {
+                gridTemplateColumns: `repeat(${this.gridColumns +1}, 1fr)`,
+                gridTemplateRows: `repeat(${this.gridRows +1}, 1fr)`,
             }
         }
     },
+
 
     methods: {
        

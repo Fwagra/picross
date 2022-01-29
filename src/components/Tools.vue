@@ -6,7 +6,9 @@
         <div  class="add-color" @click="$emit('addColor')" v-if="colors.length < 5">Ajouter</div>
         <div  class="delete-color" @click="$emit('removeColor')" v-if="colors.length > 2">Supprimer</div>
         <label for="lines">Lignes : </label>
-        <input type="number" min="3" max="15" :value="gridRows" @change="$emit('updateRows', $event.target.value)">
+        <input type="number" id="lines" min="3" max="15" :value="gridRows" @change="$emit('updateRows', $event.target.value)">
+        <label for="cols">Colonnes : </label>
+        <input type="number" id="cols" min="3" max="15" :value="gridColumns" @change="$emit('updateCols', $event.target.value)">
         
     </template>
 </template>
@@ -18,7 +20,7 @@ export default {
     components: {
         ColorTool
     },
-    emits: ['addColor', 'removeColor', 'updateRows'],
+    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols'],
     inject: ['editMode', 'updateCurrentColor'],
     props: ['colors', 'currentColor', 'gridRows', 'gridColumns'],
     computed: {

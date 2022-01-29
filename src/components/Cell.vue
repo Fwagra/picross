@@ -24,6 +24,7 @@ export default {
 .cell {
     padding: 1rem;
     cursor: pointer;
+    border: 1px solid #000;
 }
 .cell::before {
 

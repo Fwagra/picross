@@ -1,5 +1,5 @@
 <template>
-    <Grid @updateCell="updateGrid"></Grid>
+    <Grid @updateCell="updateGrid" :gridRows="gridRows" :gridColumns="gridColumns"></Grid>
     <Tools :colors='colors' 
            :currentColor="currentColor" 
            :gridRows="gridRows"
@@ -7,6 +7,7 @@
            @removeColor="removeColor" 
            @addColor="addColor" 
            @updateRows="updateRows"
+           @updateCols="updateCols"
     ></Tools>
 </template>
 
@@ -96,6 +97,21 @@ export default {
             // if the grid's size has changed, force the update of the hints
             this.refreshHints();
         },
+        gridColumns(newColumns, oldColumns) {
+            const difference = newColumns - oldColumns;
+            console.log(difference);
+            if(difference > 0) {
+                for(let i = 0; i < this.grid.length; i++) {
+                    this.grid[i] = [...this.grid[i], ...Array(difference).fill('')];
+                }
+            } else if(difference < 0) {
+                for(let i = 0; i < this.grid.length; i++) {
+                    this.grid[i].splice(difference);
+                }
+            }
+            // if the grid's size has changed, force the update of the hints
+            this.refreshHints();
+        }
 
     },
     methods: {
@@ -218,8 +234,17 @@ export default {
                 }
             }
         },
-        updateRows(newRowsNumber) {
-            this.gridRows = Number(newRowsNumber);
+        updateRows(newRowsString) {
+            const newRowsNumber = Number(newRowsString);
+            if(newRowsNumber >= 3 && newRowsNumber <= 20) {
+                this.gridRows = newRowsNumber;
+            }
+        },
+        updateCols(newColsString) {
+            const newColsNumber = Number(newColsString);
+            if(newColsNumber >= 3 && newColsNumber <= 20) {
+                this.gridColumns = newColsNumber;
+            }
         },
    
     }
