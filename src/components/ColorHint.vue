@@ -23,19 +23,26 @@ export default {
 </script>
 <style scoped>
 .contiguous {
-    background-color: rgb(207, 206, 206);
+    background-color: rgba(0, 0, 0, 0.1);
     border-radius: 50%;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.4);
 }
 span {
-    font-size: 1.4rem;
+    --font-size: 1.1rem;
+    font-size: var(--font-size);
     display: inline-block;
-    width: 1.4rem;
-    line-height: 1.5rem;
-    height: 1.4rem;
+    width: var(--font-size);
+    line-height: 1.1;
+    height: var(--font-size);
     text-align: center;
-    text-shadow: 1px 1px 0px var(--grid-dark);
 }
 .hidden {
     visibility: hidden;
+}
+
+@media screen and (min-width: 600px) {
+    span {
+        --font-size: 1.8rem
+    }
 }
 </style>

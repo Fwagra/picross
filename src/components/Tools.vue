@@ -1,21 +1,44 @@
 <template>
+    <aside>
+
     <div class="toolbar">
-        <div class="current-color" :style="{backgroundColor: getCurrentColor}"></div>
-        <div class="eraser tool-btn"  @click="updateCurrentColor('')">Gomme</div>
-        <color-tool v-for="(color, colorIndex) in colors" :key="colorIndex" :color="color" :colorIndex="colorIndex" :editMode="editMode"></color-tool>
-        <template v-if="editMode">
-            <div  class="add-color tool-btn" @click="$emit('addColor')" v-if="colors.length < 5">Ajouter</div>
-            <div  class="delete-color tool-btn" @click="$emit('removeColor')" v-if="colors.length > 2">Supprimer</div>
-            <label for="lines">Lignes : </label>
-            <input type="number" id="lines" min="3" max="15" :value="gridRows" @change="$emit('updateRows', $event.target.value)">
-            <label for="cols">Colonnes : </label>
-            <input type="number" id="cols" min="3" max="15" :value="gridColumns" @change="$emit('updateCols', $event.target.value)">
-            <div class="fill-color tool-btn" @click="$emit('fillColor')">Remplir</div>
-            <div  @[isFilled&&`click`]="openShareModal" class="share">Partager mon Picross</div>
+        <!-- <div class="current-color" v-tippy="{ content: 'Couleur actuelle' }" :style="{backgroundColor: getCurrentColor}"></div> -->
+        <color-tool v-for="(color, colorIndex) in colors" :key="colorIndex" :color="color" :colorIndex="colorIndex" :editMode="editMode" :current="colorIndex === currentColor"></color-tool>
+        <div v-if="!editMode" class="eraser tool-btn" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
+            <i class="gg-erase"></i>
+        </div>
+    </div>
+    <template v-if="editMode">
+        <div class="toolbar">
+            <div class="eraser tool-btn" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
+                <i class="gg-erase"></i>
+            </div>
+            <div class="fill-color tool-btn" v-tippy="{ content: 'Remplir les cases vides avec la couleur sélectionnée' }" v-if="editMode" @click="$emit('fillColor')"><i class="gg-color-bucket"></i></div>
+            <div  class="add-color tool-btn" @click="$emit('addColor')" v-if="colors.length < 5">
+                <i class="gg-add"></i>
+            </div>
+            <div  class="delete-color tool-btn" @click="$emit('removeColor')" v-if="colors.length > 2"><i class="gg-remove"></i></div>
+            
+        </div>
+    </template>
+    <template v-if="editMode">
+        <div class="settings">
+            <div class="field">
+                <label for="cols">Colonnes</label>
+                <input type="number" id="cols" min="3" max="15" :value="gridColumns" @change="$emit('updateCols', $event.target.value)">
+            </div>
+            <div class="field">
+                <label for="lines">Lignes</label>
+                <input type="number" id="lines" min="3" max="15" :value="gridRows" @change="$emit('updateRows', $event.target.value)">
+            </div>
+        </div>
+        <div class="share-part">
+            <div  @[isFilled&&`click`]="openShareModal" :class='{clickable: isFilled }' class="share"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
             <Modal title="Copie le lien ci-dessous et défie tes amis !"  @close="share = !share" :shareLink="shareLink" :type="'link'" v-if="share">
             </Modal>
-        </template>
-    </div>
+        </div>
+    </template>
+    </aside>
 </template>
 <script>
 
@@ -60,11 +83,78 @@ export default {
     margin: 0.5rem;
 }
 .tool-btn {
-    border-radius: 3px;
-    margin: 0.5rem;
+    border-radius: 50%;
     cursor: pointer;
-    background-color: brown;
-    padding: 1rem;
+    color: var(--grid-dark);
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+[class*='gg-']{
+    --ggs: .9rem;
+}
+.tool-btn:hover {
+    background-color: var(--grid-separations);
     color: #FFF;
+    transition: all .3s ease;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    padding: 1rem 0;
+    justify-content: center;
+}
+.toolbar:first-of-type {
+    padding-top: 2rem;
+}
+.toolbar > * {
+    margin-right: 0.5rem;
+}
+
+
+label {
+    display: block;
+    font-size: 2rem;
+}
+.settings {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+}
+.field {
+    width: 50%;
+}
+.share {
+    border-radius: 1rem;
+    width: 100%;
+    padding: .5rem 1rem .5rem 2rem;
+    font-size: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #d2d2d2;
+    margin-top: 2rem;
+    transition: all .3s ease;
+}
+.share span {
+    margin-left: 1rem;
+}
+.clickable {
+    cursor: pointer;
+    background: #5670c5;
+    color: #FFF;
+}
+
+@media screen and (min-width: 600px) {
+    .toolbar:first-of-type {
+        padding-top: 5rem;
+    }
+    .toolbar {
+        justify-content: flex-start;
+
+    }
 }
 </style>

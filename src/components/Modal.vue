@@ -58,6 +58,7 @@ export default {
 }
 .modal-header h3 {
     margin: 0;
+    font-size: 2rem;
 }
 .modal-header button {
     border: none;

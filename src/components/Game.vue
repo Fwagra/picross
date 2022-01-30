@@ -43,7 +43,7 @@ export default {
                 rows: [],
                 columns: [],
             },
-            colors: ['#000', '#F0F'],
+            colors: [],
             currentColor: 0,
             shareLink: '',
         }
@@ -56,7 +56,7 @@ export default {
             return JSON.stringify(this.colors);
         },
         isFilled() {
-            return this.editMode ? this.grid.every(row => row.every(cell => cell !== '')) : true;
+            return this.grid.every(row => row.every(cell => cell !== ''));
         },
     },
     provide() {
@@ -94,6 +94,10 @@ export default {
                 
                 // Update the hints for these rows and columns
                 this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
+
+                if (!this.editMode && this.isFilled) {
+                    console.log('Jeu terminé, vérification...');
+                }
             },
             deep: true
         },
@@ -150,6 +154,9 @@ export default {
                 this.gridColumns = data.columns;
                 this.colors = data.colors;
                 this.hints = data.hints;
+            } else {
+                this.colors.push(this.getRandomColor());
+                this.colors.push(this.getRandomColor());
             }
         },
         // Generate the grid array with the correct number of rows and columns
@@ -302,7 +309,7 @@ export default {
             this.currentColor = color;
         },
         addColor() {
-            this.colors.push("#" + Math.floor(Math.random()*16777215).toString(16));
+            this.colors.push(this.getRandomColor());
             this.updateCurrentColor(this.colors.length - 1);
         },
         // Remove the last color from colors list
@@ -360,6 +367,16 @@ export default {
         },
         updateShareLink() {
             this.shareLink = this.getShareLink();
+        },
+        getRandomColor() {
+            let color = "";
+
+            while(color.length < 6) {
+                color = Math.floor(Math.random()*16777215).toString(16);
+                
+            }
+            
+            return '#' + color;
         },
    
     }

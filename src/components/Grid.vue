@@ -1,10 +1,11 @@
 <template>
     <div class="grid" :style="gridStyles">
-        <div class="cell"></div>
-        <Hints class="col-hints" v-for="(hint, hintIndex) in hints.columns" :hint="hint" :error="errors.columns[hintIndex]" :key="hintIndex"></Hints>
+        <div :style="cellStyles" class="cell"></div>
+        <Hints class="col-hints" :style="cellStyles" v-for="(hint, hintIndex) in hints.columns" :hint="hint" :error="errors.columns[hintIndex]" :key="hintIndex"></Hints>
         <template v-for="(row, rowIndex) in this.grid" :key="rowIndex">
-            <Hints class="row-hints" :hint="hints.rows[rowIndex]" :error="errors.rows[rowIndex]"></Hints>
+            <Hints :style="rowHintsStyles" class="row-hints" :hint="hints.rows[rowIndex]" :error="errors.rows[rowIndex]"></Hints>
             <Cell 
+            :style="cellStyles"
             v-for="(column, columnIndex) in row"
             @updateCell="updateGrid"  
             :rowIndex="rowIndex" 
@@ -34,6 +35,18 @@ export default {
                 gridTemplateColumns: `repeat(${this.gridColumns +1}, 1fr)`,
                 gridTemplateRows: `repeat(${this.gridRows +1}, 1fr)`,
             }
+        },
+        cellStyles() {
+            return {
+                // width: this.gridColumns > 9 ? '1rem' : 'auto',
+                // height: this.gridColumns > 9 ? '1rem' : 'auto',
+            }
+        },
+        rowHintsStyles() {
+            return {
+                // width: this.gridColumns > 9 ? '2rem' : 'auto',
+                // height: this.gridColumns > 9 ? '2rem' : 'auto',     
+            }
         }
     },
 
@@ -49,4 +62,12 @@ export default {
     display: grid;
     user-select: none;
 }
+.row-hints {
+    border-right: 2px dashed var(--grid-separations);
+    
+}
+.col-hints {
+    border-bottom: 2px dashed var(--grid-separations);
+}
+
 </style>

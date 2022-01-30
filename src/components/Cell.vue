@@ -28,12 +28,11 @@ export default {
 </script>
 <style scoped>
 .cell {
-    padding: 1rem;
+    /* padding: 1rem; */
     cursor: pointer;
-    border: 2px dashed var(--grid-separations);
-    min-width: 2.5rem;
-    min-height: 2.5rem;
-    margin: 0 -2px -2px 0;
+    border-right: 2px dashed var(--grid-separations);
+    border-bottom: 2px dashed var(--grid-separations);
+    aspect-ratio: 1;
 }
 .col5 {
     border-right: 2px dashed var(--grid-dark);
@@ -49,8 +48,8 @@ export default {
 
 }
 .cell::before {
-    content: "";
+    /* content: "";
     padding-bottom: 100%;
-    display: block;
+    display: block; */
 }
 </style>

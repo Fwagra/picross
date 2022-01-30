@@ -5,6 +5,7 @@
 :root {
     --grid-separations: #a2a1a0;
     --grid-dark: #585656;
+    
 }
 
 body {
@@ -12,4 +13,25 @@ body {
     font-family: 'Dongle', sans-serif;
     background: #e9e9e9;
     color: #504e4b;
+}
+
+input {
+
+    padding: .5rem;
+    border-radius: 3px;
+    border: 2px solid gray;
+
+}
+@media screen and (min-width: 600px) {
+    main {
+      display: flex;
+      justify-content: center;
+    }
+
+    aside {
+        padding: 0 2rem;
+    }
+    .grid {
+        max-width: 60%;
+    }
 }
