@@ -1,5 +1,5 @@
 <template>
-    <div class="cell" :class="{error: error}">
+    <div class="cell" ref="cell" :class="{error: error}">
         <ColorHint v-for="(colorHint, colorIndex) in hint" :hint="colorHint" :color="colorIndex" :key="`color-${colorIndex}`"></ColorHint>
     </div>
 </template>
@@ -9,9 +9,22 @@
 import ColorHint from './ColorHint.vue';
 
 export default {
-    props: ['hint','error'],
+    props: ['hint','error', 'type'],
     components: {
         ColorHint
+    },
+    updated() {
+        // Update the width of the fake cell in the header each time the left column changes
+        this.updateFauxCell();
+        
+    },
+    mounted() {
+        this.updateFauxCell();
+    },
+    methods: {
+        updateFauxCell() {
+           this.$emit('updateFauxCell', this.$refs.cell.clientWidth);
+        }
     }
 }
 </script>

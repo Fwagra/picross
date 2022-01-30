@@ -31,7 +31,8 @@ input {
     aside {
         padding: 0 2rem;
     }
-    .grid {
-        max-width: 60%;
+    .boardgame {
+        min-width: 30%;
+        max-width: 50%;
     }
 }

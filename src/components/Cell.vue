@@ -47,9 +47,5 @@ export default {
     z-index: 2;
 
 }
-.cell::before {
-    /* content: "";
-    padding-bottom: 100%;
-    display: block; */
-}
+
 </style>
