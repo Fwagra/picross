@@ -16,7 +16,6 @@ export default {
     updated() {
         // Update the width of the fake cell in the header each time the left column changes
         this.updateFauxCell();
-        
     },
     mounted() {
         this.updateFauxCell();

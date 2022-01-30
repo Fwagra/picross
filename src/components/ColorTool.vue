@@ -1,6 +1,6 @@
 <template>
     <transition name="fade" appear>
-        <div class="color">
+        <div class="color-wrapper">
             <div class="color" :class="{current: current}" v-tippy="{ content: 'Peindre avec cette couleur' }" @click="updateCurrentColor(colorIndex)" :style="{backgroundColor: color}"></div>
             <label  v-tippy="{ content: 'Éditer la couleur' }" class="edit-btn" v-if="editMode" :for="'color' + colorIndex" >
                 <i class="gg-pen"></i>
@@ -30,6 +30,8 @@ export default {
     border-radius: 50%;
     cursor: pointer;
     transition: box-shadow 0.2s ease-in-out;
+    position: relative;
+
 }
 
 .edit-btn {
@@ -49,6 +51,20 @@ export default {
     box-shadow: inset 0 0 0 2px var(--grid-dark);
     transition: box-shadow 0.2s ease;
 
+}
+.color::before {
+    content: '●';
+    position: absolute;
+    left: 0;
+    text-align: center;
+    right: 0;
+    transition: all 1s;
+    transform: translateY(1rem);
+    z-index: -1;
+
+}
+.color.current::before {
+    transform: translateY(-1rem);
 }
 
 .fade-enter-active,
