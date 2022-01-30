@@ -33,7 +33,19 @@ export default {
     border-right: 2px dashed var(--grid-separations);
     border-bottom: 2px dashed var(--grid-separations);
     aspect-ratio: 1;
+
 }
+    @supports not (aspect-ratio: auto) { 
+        .cell {
+
+            padding-top: 100%;
+        height: 0;
+        position: relative;
+        overflow: hidden;
+        }
+        
+
+    }
 .col5 {
     border-right: 2px dashed var(--grid-dark);
 }
