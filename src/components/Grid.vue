@@ -4,7 +4,15 @@
         <Hints class="col-hints" v-for="(hint, hintIndex) in hints.columns" :hint="hint" :error="errors.columns[hintIndex]" :key="hintIndex"></Hints>
         <template v-for="(row, rowIndex) in this.grid" :key="rowIndex">
             <Hints class="row-hints" :hint="hints.rows[rowIndex]" :error="errors.rows[rowIndex]"></Hints>
-            <Cell @updateCell="updateGrid"  v-for="(column, columnIndex) in row" :rowIndex="rowIndex" :columnIndex="columnIndex" :color="this.grid[rowIndex][columnIndex]" :key="columnIndex"></Cell>
+            <Cell 
+            v-for="(column, columnIndex) in row"
+            @updateCell="updateGrid"  
+            :rowIndex="rowIndex" 
+            :columnIndex="columnIndex" 
+            :totalRows="gridRows"
+            :totalColumns="gridColumns"
+            :color="this.grid[rowIndex][columnIndex]" 
+            :key="columnIndex"></Cell>
         </template>
     </div>
 </template>
@@ -39,8 +47,6 @@ export default {
 <style scoped>
 .grid {
     display: grid;
-    grid-auto-rows: 1fr;
-    grid-gap: 2px;
-    
+    user-select: none;
 }
 </style>

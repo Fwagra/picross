@@ -23,16 +23,17 @@ export default {
 </script>
 <style scoped>
 .contiguous {
-    font-weight: bold;
-    background-color: #333;
+    background-color: rgb(207, 206, 206);
     border-radius: 50%;
-    width: 1.2rem;
-    height: 1.2rem;
-    display: inline-block;
-    text-align: center;
 }
 span {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    display: inline-block;
+    width: 1.4rem;
+    line-height: 1.5rem;
+    height: 1.4rem;
+    text-align: center;
+    text-shadow: 1px 1px 0px var(--grid-dark);
 }
 .hidden {
     visibility: hidden;

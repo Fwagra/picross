@@ -1,3 +1,15 @@
 * {
     box-sizing: border-box;
+    
+}
+:root {
+    --grid-separations: #a2a1a0;
+    --grid-dark: #585656;
+}
+
+body {
+    font-family: serif;
+    font-family: 'Dongle', sans-serif;
+    background: #e9e9e9;
+    color: #504e4b;
 }
