@@ -59,7 +59,6 @@ export default {
         },
         headStyles() {
             return {
-                // width: `calc( 100% / ${this.gridColumns} )`,
                 flex: this.gridColumns,
             }
         }

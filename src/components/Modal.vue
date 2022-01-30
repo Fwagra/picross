@@ -8,6 +8,7 @@
                 </div>
                 <div class="modal-body">
                     <input ref="input" v-if="type == 'link'"  type="text" :value="shareLink" class="code">
+                    <div class="message" v-if="type == 'message'">{{ message}}</div>
                 </div>
             </div>
         </div>
@@ -16,7 +17,7 @@
 
 <script>
 export default {
-    props: ['title', 'type', 'shareLink'],
+    props: ['title', 'type', 'shareLink', 'message'],
     methods: {
         close() {
             this.$emit('close');
@@ -82,7 +83,9 @@ export default {
 .fade-leave-to {
   opacity: 0;
 }
-
+.message {
+    font-size: 1.7rem
+}
 .code {
     padding: 1rem;
     width: 100%;

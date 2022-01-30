@@ -14,19 +14,22 @@
            @fillColor="fillColor"
            @updateShareLink="updateShareLink"
     ></Tools>
+    <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = !openModal"  :type="'message'" v-if="openModal"></Modal>
 </template>
 
 <script>
 
 import Grid from './Grid.vue';
 import Tools from './Tools.vue';
+import Modal from './Modal.vue';
 import JSONCrush from 'jsoncrush';
 import { computed } from 'vue';
 
 export default {
     components: {
         Grid,
-        Tools
+        Tools,
+        Modal
     },
     data() {
         return {
@@ -46,6 +49,10 @@ export default {
             colors: [],
             currentColor: 0,
             shareLink: '',
+            victory: false,
+            modalTitle: '',
+            modalMessage: '',
+            openModal: false,
         }
     },
     computed: {
@@ -96,7 +103,7 @@ export default {
                 this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
 
                 if (!this.editMode && this.isFilled) {
-                    console.log('Jeu terminé, vérification...');
+                    this.checkVictory();
                 }
             },
             deep: true
@@ -378,6 +385,19 @@ export default {
             
             return '#' + color;
         },
+        checkVictory() {
+            if(JSON.stringify(this.grid) === JSON.stringify(this.correctGrid)) {
+                this.victory = true;
+                this.openModal = true;
+
+                this.modalTitle = "Bravo !";
+                this.modalMessage = "Tu as réussi à résoudre ce picross !";
+            } else {
+                this.openModal = true;
+                this.modalTitle = "Dommage !";
+                this.modalMessage = "Toutes les cases sont remplies, mais elles ne correspondent pas à la solution. Tu peux fermer cette fenêtre et tenter de corriger !";
+            }
+        }
    
     }
 }

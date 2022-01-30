@@ -4,20 +4,20 @@
     <div class="toolbar">
         <!-- <div class="current-color" v-tippy="{ content: 'Couleur actuelle' }" :style="{backgroundColor: getCurrentColor}"></div> -->
         <color-tool v-for="(color, colorIndex) in colors" :key="colorIndex" :color="color" :colorIndex="colorIndex" :editMode="editMode" :current="colorIndex === currentColor"></color-tool>
-        <div v-if="!editMode" class="eraser tool-btn" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
+        <div v-if="!editMode" :class="{current: isEraser}" class="eraser tool-btn" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
             <i class="gg-erase"></i>
         </div>
     </div>
     <template v-if="editMode">
         <div class="toolbar">
-            <div class="eraser tool-btn" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
+            <div class="eraser tool-btn" :class="{current: isEraser}" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
                 <i class="gg-erase"></i>
             </div>
             <div class="fill-color tool-btn" v-tippy="{ content: 'Remplir les cases vides avec la couleur sélectionnée' }" v-if="editMode" @click="$emit('fillColor')"><i class="gg-color-bucket"></i></div>
-            <div  class="add-color tool-btn" @click="$emit('addColor')" v-if="colors.length < 5">
+            <div v-tippy="{ content: 'Ajouter une couleur' }" class="add-color tool-btn" @click="$emit('addColor')" v-if="colors.length < 5">
                 <i class="gg-add"></i>
             </div>
-            <div  class="delete-color tool-btn" @click="$emit('removeColor')" v-if="colors.length > 2"><i class="gg-remove"></i></div>
+            <div  class="delete-color tool-btn" v-tippy="{ content: 'Retirer une couleur' }" @click="$emit('removeColor')" v-if="colors.length > 2"><i class="gg-remove"></i></div>
             
         </div>
     </template>
@@ -33,7 +33,7 @@
             </div>
         </div>
         <div class="share-part">
-            <div  @[isFilled&&`click`]="openShareModal" :class='{clickable: isFilled }' class="share"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
+            <div  @[isFilled&&`click`]="openShareModal" :class='{clickable: isFilled }' v-tippy="{ content: shareMessage }" class="share"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
             <Modal title="Copie le lien ci-dessous et défie tes amis !"  @close="share = !share" :shareLink="shareLink" :type="'link'" v-if="share">
             </Modal>
         </div>
@@ -57,6 +57,12 @@ export default {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
         },
+        shareMessage() {
+            return !this.isFilled ? 'Ce bouton sera disponible quand toute la grille sera remplie' : '';
+        },
+        isEraser() {
+            return this.currentColor === '';
+        }
     },
     data() {
         return {
@@ -91,6 +97,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+    background: var(--background);
 }
 [class*='gg-']{
     --ggs: .9rem;
@@ -103,7 +110,6 @@ export default {
 
 .toolbar {
     display: flex;
-    align-items: center;
     padding: 1rem 0;
     justify-content: center;
 }
@@ -147,7 +153,27 @@ label {
     background: #5670c5;
     color: #FFF;
 }
+.eraser {
+    position: relative;
+}
+.eraser::before {
+    content: '●';
+    position: absolute;
+    left: 0;
+    text-align: center;
+    right: 0;
+    transition: all 1s;
+    transform: translateY(1rem);
+    z-index: -1;
 
+}
+.current {
+        box-shadow: inset 0 0 0 2px var(--grid-dark);
+    transition: box-shadow 0.2s ease;
+}
+.eraser.current::before {
+    transform: translateY(-2rem);
+}
 @media screen and (min-width: 600px) {
     .toolbar:first-of-type {
         padding-top: 5rem;
