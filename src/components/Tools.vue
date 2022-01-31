@@ -14,6 +14,14 @@
                 <i class="gg-edit-contrast"></i>
             </div>
         </div>
+        <div class="buttons">
+            <a :href="url" class="button transparent">
+                Créer ma grille
+            </a>
+            <div v-if="victory" @click="$emit('switchMode')" class="button transparent">
+                Éditer la grille
+            </div>
+        </div>
     </template>
     <template v-if="editMode">
         <div class="toolbar">
@@ -43,7 +51,7 @@
             </div>
         </div>
         <div class="share-part">
-            <div  @[isFilled&&`click`]="openShareModal" :class='{clickable: isFilled }' v-tippy="{ content: shareMessage }" class="share"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
+            <div  @[isFilled&&`click`]="openShareModal" :class='{disabled: !isFilled }' v-tippy="{ content: shareMessage }" class="share button"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
             <Modal title="Copie le lien ci-dessous et défie tes amis !"  @close="share = !share" :shareLink="shareLink" :type="'link'" v-if="share">
             </Modal>
         </div>
@@ -60,9 +68,9 @@ export default {
         ColorTool,
         Modal
     },
-    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink'],
+    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode'],
     inject: [ 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode"],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
@@ -72,6 +80,9 @@ export default {
         },
         isEraser() {
             return this.currentColor === '';
+        },
+        url() {
+            return window.location.origin;
         }
     },
     data() {
@@ -156,25 +167,13 @@ label {
     width: 50%;
 }
 .share {
-    border-radius: 1rem;
-    width: 100%;
     padding: .5rem 1.5rem .5rem 2rem;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #d2d2d2;
     margin-top: 2rem;
-    transition: all .3s ease;
 }
 .share span {
     margin-left: 1rem;
 }
-.clickable {
-    cursor: pointer;
-    background: #5670c5;
-    color: #FFF;
-}
+
 .eraser {
     position: relative;
 }

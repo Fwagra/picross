@@ -7,12 +7,14 @@
            :isFilled="isFilled"
            :shareLink="shareLink"
            :editMode="editMode"
+           :victory="victory"
            @removeColor="removeColor" 
            @addColor="addColor" 
            @updateRows="updateRows"
            @updateCols="updateCols"
            @fillColor="fillColor"
            @updateShareLink="updateShareLink"
+           @switchMode="switchMode"
     ></Tools>
     <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = !openModal"  :type="'message'" v-if="openModal"></Modal>
 </template>
@@ -400,6 +402,9 @@ export default {
                 this.modalTitle = "Dommage !";
                 this.modalMessage = "Toutes les cases sont remplies, mais elles ne correspondent pas à la solution. Tu peux fermer cette fenêtre et tenter de corriger !";
             }
+        },
+        switchMode() {
+            this.editMode = true;
         }
    
     }
