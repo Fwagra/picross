@@ -8,8 +8,18 @@
             <i class="gg-erase"></i>
         </div>
     </div>
+    <template v-if="!editMode">
+        <div class="toolbar">
+            <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
+                <i class="gg-edit-contrast"></i>
+            </div>
+        </div>
+    </template>
     <template v-if="editMode">
         <div class="toolbar">
+            <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
+                <i class="gg-edit-contrast"></i>
+            </div>
             <div class="eraser tool-btn" :class="{current: isEraser}" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
                 <i class="gg-erase"></i>
             </div>
@@ -67,12 +77,24 @@ export default {
     data() {
         return {
             share: false,
+            backgrounds: [
+                '#e9e9e9',
+                '#848282',
+                '#1f1f1f',
+            ],
+            currentBackground: 0,
         }
     },
     methods: {
         openShareModal() {
             this.$emit('updateShareLink');
             this.share = true;
+        },
+        changeBackground() {
+            this.currentBackground = (this.currentBackground + 1) % this.backgrounds.length;
+            const root = document.documentElement;
+
+            root.style.setProperty('--background', this.backgrounds[this.currentBackground]);
         }
     }
 }
@@ -136,7 +158,7 @@ label {
 .share {
     border-radius: 1rem;
     width: 100%;
-    padding: .5rem 1rem .5rem 2rem;
+    padding: .5rem 1.5rem .5rem 2rem;
     font-size: 2rem;
     display: flex;
     justify-content: center;

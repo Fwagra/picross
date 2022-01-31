@@ -11,8 +11,9 @@
 body {
     font-family: serif;
     font-family: 'Dongle', sans-serif;
-    background: var(--background);
+    background-color: var(--background);
     color: #504e4b;
+    transition: background-color .3s;
 }
 
 input {
