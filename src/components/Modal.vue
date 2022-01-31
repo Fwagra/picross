@@ -8,7 +8,9 @@
                 </div>
                 <div class="modal-body">
                     <input ref="input" v-if="type == 'link'"  type="text" :value="shareLink" class="code">
-                    <div class="message" v-if="type == 'message'">{{ message}}</div>
+                    <div class="message" v-if="type == 'message'">{{ message}}
+                        <slot>d</slot>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,7 +49,7 @@ export default {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 80%;
-    max-width: 500px;
+    max-width: 850px;
     background-color: #fff;
     border-radius: 5px;
     padding: 1rem;

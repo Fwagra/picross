@@ -7,12 +7,15 @@
            :isFilled="isFilled"
            :shareLink="shareLink"
            :editMode="editMode"
+           :victory="victory"
            @removeColor="removeColor" 
            @addColor="addColor" 
            @updateRows="updateRows"
            @updateCols="updateCols"
            @fillColor="fillColor"
            @updateShareLink="updateShareLink"
+           @switchMode="switchMode"
+           @clickHistory="moveBackFromHistory"
     ></Tools>
     <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = !openModal"  :type="'message'" v-if="openModal"></Modal>
 </template>
@@ -46,6 +49,7 @@ export default {
                 rows: [],
                 columns: [],
             },
+            history: [],
             colors: [],
             currentColor: 0,
             shareLink: '',
@@ -65,6 +69,9 @@ export default {
         isFilled() {
             return this.grid.every(row => row.every(cell => cell !== ''));
         },
+        noErrors() {
+            return this.errors.rows.every(error => error === false) && this.errors.columns.every(error => error === false);
+        },
     },
     provide() {
         return {
@@ -73,7 +80,7 @@ export default {
             gridRows: this.gridRows,
             grid: this.grid,
             colors: computed(() => this.colors),
-            currentColor: this.currentColor,
+            currentColor: computed(() => this.currentColor),
             hints: this.hints,
             updateGrid: this.updateGrid,
             updateColors: this.updateColors,
@@ -102,7 +109,7 @@ export default {
                 // Update the hints for these rows and columns
                 this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
 
-                if (!this.editMode && this.isFilled) {
+                if (!this.editMode && this.isFilled && this.noErrors) {
                     this.checkVictory();
                 }
             },
@@ -176,8 +183,23 @@ export default {
             }
         },
          updateGrid(rowIndex, columnIndex) {
+            const oldValue = this.grid[rowIndex][columnIndex];
             // Update the grid array with the new color
             this.grid[rowIndex][columnIndex] = this.currentColor;
+
+            // Update the history
+            this.history.push({
+                rowIndex: rowIndex,
+                columnIndex: columnIndex,
+                color: this.currentColor,
+                oldValue: oldValue,
+            });
+        },
+        moveBackFromHistory() {
+            if(this.history.length > 0) {
+                const lastMove = this.history.pop();
+                this.grid[lastMove.rowIndex][lastMove.columnIndex] = lastMove.oldValue;
+            }
         },
         // Get the differences between the old and new grid
         getGridDifferences(newGrid, oldGrid) {
@@ -397,6 +419,9 @@ export default {
                 this.modalTitle = "Dommage !";
                 this.modalMessage = "Toutes les cases sont remplies, mais elles ne correspondent pas à la solution. Tu peux fermer cette fenêtre et tenter de corriger !";
             }
+        },
+        switchMode() {
+            this.editMode = true;
         }
    
     }

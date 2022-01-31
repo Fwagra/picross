@@ -10,16 +10,19 @@
             <div class="hints">
                 <Hints @updateFauxCell="updateFauxCell" :type="'row'" v-for="(hint, hintIndex) in hints.rows" :key="hintIndex"  class="row-hints" :hint="hint" :error="errors.rows[hintIndex]"></Hints>
             </div>
-            <div class="grid" :style="gridStyles">
+            <div class="grid"  @mouseleave="this.release" :style="gridStyles">
 
                 <template v-for="(row, rowIndex) in this.grid" :key="rowIndex">
                     <Cell 
                     v-for="(column, columnIndex) in row"
                     @updateCell="updateGrid"  
+                    @press="press"
+                    @release="release"
                     :rowIndex="rowIndex" 
                     :columnIndex="columnIndex" 
                     :totalRows="gridRows"
                     :totalColumns="gridColumns"
+                    :pressed="pressed"
                     :color="this.grid[rowIndex][columnIndex]" 
                     :key="columnIndex"></Cell>
                 </template>
@@ -42,6 +45,7 @@ export default {
     data() {
         return {
             fauxCellWidth: 0,
+            pressed: false,
         }
     },
     computed: {
@@ -68,7 +72,13 @@ export default {
     methods: {
        updateFauxCell(width) {
             this.fauxCellWidth = width;
-        }
+        },
+        press() {
+            this.pressed = true;
+        },
+        release() {
+            this.pressed = false;
+        },
     }
 }
 </script>
@@ -83,6 +93,7 @@ export default {
 .col-hints,
 .row-hints {
     user-select: none;
+    padding: 3px;
     
 }
 .head {

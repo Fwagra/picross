@@ -8,8 +8,41 @@
             <i class="gg-erase"></i>
         </div>
     </div>
+    <template v-if="!editMode">
+        <div class="toolbar">
+            <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
+                <i class="gg-edit-contrast"></i>
+            </div>
+            <div class="tool-btn history" v-tippy="{content: 'Annuler la dernière action'}" @click="$emit('clickHistory')">
+                <i class="gg-undo"></i>
+            </div>
+        </div>
+        <div class="buttons">
+            <div class="button transparent" @click="rules = true">
+                Comment jouer ?
+            </div>
+            <Modal type="message" title="Comment jouer" v-if="rules" @close="rules = false">
+                <ul>
+                    <li>Le but du jeu est de remplir toutes les cases de la grille</li>
+                    <li>A côté de chaque ligne et colonne se trouvent des indices sur les couleurs qui la composent</li>
+                    <li>Par exemple, un <strong>4</strong> rouge sur une ligne indique qu'elle contient 4 cases rouges.</li>
+                    <li>Si ce <strong>4</strong> est entouré, les cases rouges sont toutes adjacentes</li>
+                    <li>S'il n'est pas entouré, elles ne sont pas toutes adjacentes</li>
+                </ul>
+            </Modal>
+            <a :href="url" class="button transparent">
+                Créer ma grille
+            </a>
+            <div v-if="victory" @click="$emit('switchMode')" class="button transparent">
+                Éditer la grille
+            </div>
+        </div>
+    </template>
     <template v-if="editMode">
         <div class="toolbar">
+            <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
+                <i class="gg-edit-contrast"></i>
+            </div>
             <div class="eraser tool-btn" :class="{current: isEraser}" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
                 <i class="gg-erase"></i>
             </div>
@@ -33,7 +66,7 @@
             </div>
         </div>
         <div class="share-part">
-            <div  @[isFilled&&`click`]="openShareModal" :class='{clickable: isFilled }' v-tippy="{ content: shareMessage }" class="share"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
+            <div  @[isFilled&&`click`]="openShareModal" :class='{disabled: !isFilled }' v-tippy="{ content: shareMessage }" class="share button"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
             <Modal title="Copie le lien ci-dessous et défie tes amis !"  @close="share = !share" :shareLink="shareLink" :type="'link'" v-if="share">
             </Modal>
         </div>
@@ -50,9 +83,9 @@ export default {
         ColorTool,
         Modal
     },
-    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink'],
+    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory'],
     inject: [ 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode"],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
@@ -62,17 +95,33 @@ export default {
         },
         isEraser() {
             return this.currentColor === '';
+        },
+        url() {
+            return window.location.origin;
         }
     },
     data() {
         return {
             share: false,
+            rules: false,
+            backgrounds: [
+                '#e9e9e9',
+                '#848282',
+                '#1f1f1f',
+            ],
+            currentBackground: 0,
         }
     },
     methods: {
         openShareModal() {
             this.$emit('updateShareLink');
             this.share = true;
+        },
+        changeBackground() {
+            this.currentBackground = (this.currentBackground + 1) % this.backgrounds.length;
+            const root = document.documentElement;
+
+            root.style.setProperty('--background', this.backgrounds[this.currentBackground]);
         }
     }
 }
@@ -134,25 +183,13 @@ label {
     width: 50%;
 }
 .share {
-    border-radius: 1rem;
-    width: 100%;
-    padding: .5rem 1rem .5rem 2rem;
-    font-size: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #d2d2d2;
+    padding: .5rem 1.5rem .5rem 2rem;
     margin-top: 2rem;
-    transition: all .3s ease;
 }
 .share span {
     margin-left: 1rem;
 }
-.clickable {
-    cursor: pointer;
-    background: #5670c5;
-    color: #FFF;
-}
+
 .eraser {
     position: relative;
 }
