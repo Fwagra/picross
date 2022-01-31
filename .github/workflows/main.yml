@@ -29,15 +29,10 @@ jobs:
       - name: Run a one-line script
         run: echo Hello, world!
         
-      - name: Netlify Deploy
-        # You may pin to the exact commit or the version.
-        # uses: jsmrcaga/action-netlify-deploy@fb6a5f936a4b06a8f7793e69fc5a022ffe39807a
-        uses: jsmrcaga/action-netlify-deploy@v1.7.2
+      - name: Deploy Netlify
+        uses: danakim/gh-action-deploy-netlify@master
         with:
-          # Auth token to use with netlify
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          # Your Netlify site id
-          NETLIFY_SITE_ID: ${{ secrets.DEV_NETLIFY_SITE_ID }}
-        
-
+          AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          SITE_ID: ${{ secrets.DEV_NETLIFY_SITE_ID }}
+          DEPLOY_PROD: true
 
