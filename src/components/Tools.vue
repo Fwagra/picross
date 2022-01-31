@@ -18,6 +18,18 @@
             </div>
         </div>
         <div class="buttons">
+            <div class="button transparent" @click="rules = true">
+                Comment jouer ?
+            </div>
+            <Modal type="message" title="Comment jouer" v-if="rules" @close="rules = false">
+                <ul>
+                    <li>Le but du jeu est de remplir toutes les cases de la grille</li>
+                    <li>A côté de chaque ligne et colonne se trouvent des indices sur les couleurs qui la composent</li>
+                    <li>Par exemple, un <strong>4</strong> rouge sur une ligne indique qu'elle contient 4 cases rouges.</li>
+                    <li>Si ce <strong>4</strong> est entouré, les cases rouges sont toutes adjacentes</li>
+                    <li>S'il n'est pas entouré, elles ne sont pas toutes adjacentes</li>
+                </ul>
+            </Modal>
             <a :href="url" class="button transparent">
                 Créer ma grille
             </a>
@@ -91,6 +103,7 @@ export default {
     data() {
         return {
             share: false,
+            rules: false,
             backgrounds: [
                 '#e9e9e9',
                 '#848282',
