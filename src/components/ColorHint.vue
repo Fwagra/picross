@@ -28,7 +28,7 @@ export default {
     text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.4);
 }
 span {
-    --font-size: 1.1rem;
+    --font-size: 1.7rem;
     font-size: var(--font-size);
     display: inline-block;
     width: var(--font-size);

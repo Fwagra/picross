@@ -65,6 +65,9 @@ export default {
         isFilled() {
             return this.grid.every(row => row.every(cell => cell !== ''));
         },
+        noErrors() {
+            return this.errors.rows.every(error => error === false) && this.errors.columns.every(error => error === false);
+        },
     },
     provide() {
         return {
@@ -73,7 +76,7 @@ export default {
             gridRows: this.gridRows,
             grid: this.grid,
             colors: computed(() => this.colors),
-            currentColor: this.currentColor,
+            currentColor: computed(() => this.currentColor),
             hints: this.hints,
             updateGrid: this.updateGrid,
             updateColors: this.updateColors,
@@ -102,7 +105,7 @@ export default {
                 // Update the hints for these rows and columns
                 this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
 
-                if (!this.editMode && this.isFilled) {
+                if (!this.editMode && this.isFilled && this.noErrors) {
                     this.checkVictory();
                 }
             },

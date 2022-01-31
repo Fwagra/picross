@@ -93,6 +93,7 @@ export default {
 .col-hints,
 .row-hints {
     user-select: none;
+    padding: 3px;
     
 }
 .head {

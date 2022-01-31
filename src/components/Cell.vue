@@ -4,7 +4,7 @@
 
 <script>
 export default {
-    inject: ['colors'],
+    inject: ['colors', 'currentColor'],
     props: ['color', 'rowIndex', 'columnIndex', 'totalRows', 'totalColumns', 'pressed'],
     computed: {
         style() {
@@ -22,13 +22,15 @@ export default {
 
     methods: {
         drag() {
-            if(this.pressed && this.color === '') {
+            if((this.pressed && this.color === '') || (this.pressed &&  this.currentColor === '')) {
                 this.$emit('update-cell', this.rowIndex, this.columnIndex)
             }
         },
         updateCell() {
-            this.$emit('release');
-            this.$emit('update-cell', this.rowIndex, this.columnIndex);
+            if(!this.pressed) {
+                this.$emit('release');
+                this.$emit('update-cell', this.rowIndex, this.columnIndex);
+            }
         },
         press() {
             this.$emit('press');
