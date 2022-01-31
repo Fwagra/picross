@@ -1,11 +1,11 @@
 <template>
-    <div  :class="cellClasses" class="cell grid-cell" v-touch:press="this.updateCell"  :style="style"></div>
+    <div  :class="cellClasses" class="cell grid-cell" v-touch:tap="this.updateCell" v-touch:press="this.press" v-touch:release="this.release" @mouseover="this.drag" :style="style"></div>
 </template>
 
 <script>
 export default {
     inject: ['colors'],
-    props: ['color', 'rowIndex', 'columnIndex', 'totalRows', 'totalColumns'],
+    props: ['color', 'rowIndex', 'columnIndex', 'totalRows', 'totalColumns', 'pressed'],
     computed: {
         style() {
             return {
@@ -19,10 +19,25 @@ export default {
             }
         }
     },
+
     methods: {
+        drag() {
+            if(this.pressed && this.color === '') {
+                this.$emit('update-cell', this.rowIndex, this.columnIndex)
+            }
+        },
         updateCell() {
+            this.$emit('release');
             this.$emit('update-cell', this.rowIndex, this.columnIndex);
         },
+        press() {
+            this.$emit('press');
+            this.$emit('update-cell', this.rowIndex, this.columnIndex);
+
+        },
+        release() {
+            this.$emit('release');
+        }
     }
 }
 </script>
