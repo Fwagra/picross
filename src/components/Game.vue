@@ -15,6 +15,7 @@
            @fillColor="fillColor"
            @updateShareLink="updateShareLink"
            @switchMode="switchMode"
+           @clickHistory="moveBackFromHistory"
     ></Tools>
     <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = !openModal"  :type="'message'" v-if="openModal"></Modal>
 </template>
@@ -48,6 +49,7 @@ export default {
                 rows: [],
                 columns: [],
             },
+            history: [],
             colors: [],
             currentColor: 0,
             shareLink: '',
@@ -181,8 +183,23 @@ export default {
             }
         },
          updateGrid(rowIndex, columnIndex) {
+            const oldValue = this.grid[rowIndex][columnIndex];
             // Update the grid array with the new color
             this.grid[rowIndex][columnIndex] = this.currentColor;
+
+            // Update the history
+            this.history.push({
+                rowIndex: rowIndex,
+                columnIndex: columnIndex,
+                color: this.currentColor,
+                oldValue: oldValue,
+            });
+        },
+        moveBackFromHistory() {
+            if(this.history.length > 0) {
+                const lastMove = this.history.pop();
+                this.grid[lastMove.rowIndex][lastMove.columnIndex] = lastMove.oldValue;
+            }
         },
         // Get the differences between the old and new grid
         getGridDifferences(newGrid, oldGrid) {

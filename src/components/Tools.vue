@@ -13,6 +13,9 @@
             <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
                 <i class="gg-edit-contrast"></i>
             </div>
+            <div class="tool-btn history" v-tippy="{content: 'Annuler la dernière action'}" @click="$emit('clickHistory')">
+                <i class="gg-undo"></i>
+            </div>
         </div>
         <div class="buttons">
             <a :href="url" class="button transparent">
@@ -68,7 +71,7 @@ export default {
         ColorTool,
         Modal
     },
-    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode'],
+    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory'],
     inject: [ 'updateCurrentColor'],
     props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory"],
     computed: {
