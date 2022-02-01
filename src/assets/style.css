@@ -21,6 +21,7 @@ input {
     padding: .5rem;
     border-radius: 3px;
     border: 2px solid gray;
+    width: 100%;
 
 }
 div.tippy-box {
@@ -46,7 +47,7 @@ div.tippy-box {
     line-height: 1;
     background: transparent;
     color: var(--grid-dark);
-    padding: .5rem;
+    padding: .5rem 1rem;
 }
 .disabled.button {
     background: #d2d2d2;
@@ -60,12 +61,13 @@ div.tippy-box {
     main {
       display: flex;
       justify-content: center;
+      flex-wrap: wrap;
     }
 
     aside {
         padding: 0 2rem;
     }
-    .boardgame {
+    .board-wrapper {
         min-width: 30%;
         max-width: 50%;
     }

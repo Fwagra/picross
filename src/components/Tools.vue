@@ -182,6 +182,9 @@ label {
 .field {
     width: 50%;
 }
+.field:not(:last-of-type) {
+    padding-right: 1rem;
+}
 .share {
     padding: .5rem 1.5rem .5rem 2rem;
     margin-top: 2rem;
