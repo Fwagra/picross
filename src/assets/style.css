@@ -14,6 +14,7 @@ body {
     background-color: var(--background);
     color: var(--grid-dark);
     transition: background-color .3s;
+    overscroll-behavior: contain;
 }
 
 input {

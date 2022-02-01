@@ -161,6 +161,7 @@ export default {
     display: flex;
     padding: 1rem 0;
     justify-content: center;
+    user-select: none;
 }
 .toolbar:first-of-type {
     padding-top: 2rem;

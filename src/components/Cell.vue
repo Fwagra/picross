@@ -1,5 +1,5 @@
 <template>
-    <div  :class="cellClasses" class="cell grid-cell" v-touch:tap="this.updateCell" v-touch:press="this.press" v-touch:release="this.release" @mouseover="this.drag" :style="style"></div>
+    <div  :class="cellClasses" class="cell grid-cell" v-touch:tap="this.updateCell" v-touch:press="this.press"   v-touch:release="this.release" @mouseover="this.drag" :style="style"></div>
 </template>
 
 <script>
@@ -33,12 +33,16 @@ export default {
             }
         },
         press() {
+            document.documentElement.style.overflow = 'hidden';
+
             this.$emit('press');
             this.$emit('update-cell', this.rowIndex, this.columnIndex);
 
         },
         release() {
             this.$emit('release');
+            document.documentElement.style.overflow = 'auto';
+
         }
     }
 }

@@ -12,10 +12,11 @@
                 <div class="hints"  :style="headStyles"> 
                     <Hints type="col" class="col-hints"  v-for="(hint, hintIndex) in hints.columns" :hint="hint" :error="errors.columns[hintIndex]" :key="hintIndex"></Hints>
                 </div>
-                <div class="grid"  @mouseleave="this.release" :style="gridStyles">
+                <div class="grid"  @mouseleave="this.release" @touchmove="this.debouncedMobileDrag" :style="gridStyles">
 
                     <template v-for="(row, rowIndex) in this.grid" :key="rowIndex">
                         <Cell 
+                        :ref="'cell-' + rowIndex + columnIndex"
                         v-for="(column, columnIndex) in row"
                         @updateCell="updateGrid"  
                         @press="press"
@@ -43,7 +44,8 @@ export default {
         Cell,
         Hints
     },
-    inject: [ 'grid', 'updateGrid'],
+    inject: [ 'grid', 'updateGrid', 'currentColor'],
+    emits: ['updateGrid'],
     props: ['gridRows',  'gridColumns','colors', 'hints', 'errors'],
     data() {
         return {
@@ -82,6 +84,33 @@ export default {
         release() {
             this.pressed = false;
         },
+        debounce(func, timeFrame) {
+            var lastTime = 0;
+            return function (...args) {
+                var now = new Date();
+                if (now - lastTime >= timeFrame) {
+                    func(...args);
+                    lastTime = now;
+                }
+            };
+        },
+        debouncedMobileDrag(e) {
+            this.debounce(this.mobileDrag, 200)(e);
+        },
+        
+        mobileDrag(e) {
+            let position = e.touches[0];
+            let el = document.elementFromPoint(position.clientX, position.clientY);
+            let cell;
+            for (let currentCell in this.$refs) {
+                if (this.$refs[currentCell][0].$el === el) {
+                    cell = this.$refs[currentCell][0];
+                }
+            }
+            if (cell && (cell.color === '' || this.currentColor === '' )) {
+                this.$emit('update-cell', cell.rowIndex, cell.columnIndex);
+            }
+        }
     }
 }
 </script>
@@ -89,6 +118,7 @@ export default {
 <style scoped>
 .board-wrapper {
     display: flex;
+    user-select: none;
     justify-content: center;
 }
 .grid {
