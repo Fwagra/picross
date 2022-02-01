@@ -31,6 +31,8 @@ export default {
     cursor: pointer;
     transition: box-shadow 0.2s ease-in-out;
     position: relative;
+    -webkit-user-select: none;
+    user-select: none;
 
 }
 

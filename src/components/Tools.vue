@@ -161,6 +161,7 @@ export default {
     display: flex;
     padding: 1rem 0;
     justify-content: center;
+    user-select: none;
 }
 .toolbar:first-of-type {
     padding-top: 2rem;
@@ -181,6 +182,9 @@ label {
 }
 .field {
     width: 50%;
+}
+.field:not(:last-of-type) {
+    padding-right: 1rem;
 }
 .share {
     padding: .5rem 1.5rem .5rem 2rem;
