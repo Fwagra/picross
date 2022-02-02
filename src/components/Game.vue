@@ -196,7 +196,7 @@ export default {
             });
         },
         moveBackFromHistory() {
-            if(this.history.length > 0) {
+            if(this.history.length > 0 && this.victory === false) {
                 const lastMove = this.history.pop();
                 this.grid[lastMove.rowIndex][lastMove.columnIndex] = lastMove.oldValue;
             }
