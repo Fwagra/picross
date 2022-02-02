@@ -1,5 +1,5 @@
 <template>
-    <Grid @updateCell="updateGrid" :gridRows="gridRows" :colors="colors" :gridColumns="gridColumns" :hints="hints" :errors="errors"></Grid>
+    <Grid @updateCell="updateGrid" :gridRows="gridRows" :colors="colors" :gridColumns="gridColumns" :hints="hints" :errors="errors" :victory="victory"></Grid>
     <Tools :colors='colors' 
            :currentColor="currentColor" 
            :gridRows="gridRows"
@@ -17,7 +17,7 @@
            @switchMode="switchMode"
            @clickHistory="moveBackFromHistory"
     ></Tools>
-    <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = !openModal"  :type="'message'" v-if="openModal"></Modal>
+    <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = false"  :type="'message'" v-if="openModal"></Modal>
 </template>
 
 <script>
@@ -196,7 +196,7 @@ export default {
             });
         },
         moveBackFromHistory() {
-            if(this.history.length > 0) {
+            if(this.history.length > 0 && this.victory === false) {
                 const lastMove = this.history.pop();
                 this.grid[lastMove.rowIndex][lastMove.columnIndex] = lastMove.oldValue;
             }
@@ -410,7 +410,11 @@ export default {
         checkVictory() {
             if(JSON.stringify(this.grid) === JSON.stringify(this.correctGrid)) {
                 this.victory = true;
-                this.openModal = true;
+                // Ghost click on modal overlay only on mobile. The setTimeout prevents it.
+                // TODO : Find why there's a ghost click on mobile
+                setTimeout(() => {
+                    this.openModal = true;
+                }, 200);
 
                 this.modalTitle = "Bravo !";
                 this.modalMessage = "Tu as réussi à résoudre ce picross !";
@@ -422,6 +426,7 @@ export default {
         },
         switchMode() {
             this.editMode = true;
+            this.victory = false;
         }
    
     }
