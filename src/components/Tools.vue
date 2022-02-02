@@ -46,7 +46,7 @@
             <div class="eraser tool-btn" :class="{current: isEraser}" v-tippy="{ content: 'Gomme' }"  @click="updateCurrentColor('')">
                 <i class="gg-erase"></i>
             </div>
-            <div class="fill-color tool-btn" v-tippy="{ content: 'Remplir les cases vides avec la couleur sélectionnée' }" v-if="editMode" @click="$emit('fillColor')"><i class="gg-color-bucket"></i></div>
+            <div class="fill-color tool-btn" v-tippy="{ content: 'Remplir les cases vides avec la couleur sélectionnée' }" @click="$emit('fillColor')"><i class="gg-color-bucket"></i></div>
             <div v-tippy="{ content: 'Ajouter une couleur' }" class="add-color tool-btn" @click="$emit('addColor')" v-if="colors.length < 5">
                 <i class="gg-add"></i>
             </div>

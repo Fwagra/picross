@@ -17,7 +17,7 @@
            @switchMode="switchMode"
            @clickHistory="moveBackFromHistory"
     ></Tools>
-    <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = !openModal"  :type="'message'" v-if="openModal"></Modal>
+    <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = false"  :type="'message'" v-if="openModal"></Modal>
 </template>
 
 <script>
@@ -410,7 +410,11 @@ export default {
         checkVictory() {
             if(JSON.stringify(this.grid) === JSON.stringify(this.correctGrid)) {
                 this.victory = true;
-                this.openModal = true;
+                // Ghost click on modal overlay only on mobile. The setTimeout prevents it.
+                // TODO : Find why there's a ghost click on mobile
+                setTimeout(() => {
+                    this.openModal = true;
+                }, 200);
 
                 this.modalTitle = "Bravo !";
                 this.modalMessage = "Tu as réussi à résoudre ce picross !";

@@ -96,7 +96,9 @@ export default {
             };
         },
         debouncedMobileDrag(e) {
-            this.debounce(this.mobileDrag, 200)(e);
+            if(!this.victory) {
+                this.debounce(this.mobileDrag, 200)(e);
+            }
         },
         
         mobileDrag(e) {
@@ -164,6 +166,7 @@ export default {
     top: 0;
     left: 0;
     bottom: 0;
+    z-index: 2;
     right: 0;
 }
 
