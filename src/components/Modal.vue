@@ -9,7 +9,7 @@
                 <div class="modal-body">
                     <input ref="input" v-if="type == 'link'"  type="text" :value="shareLink" class="code">
                     <div class="message" v-if="type == 'message'">{{ message}}
-                        <slot>d</slot>
+                        <slot></slot>
                     </div>
                 </div>
             </div>
@@ -68,9 +68,7 @@ export default {
     background: none;
     cursor: pointer;
 }
-.modal-body {
-    padding: 1rem;
-}
+
 .close {
     font-size: 2rem;
 }

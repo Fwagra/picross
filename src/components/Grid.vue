@@ -32,6 +32,7 @@
             </div>
             </div>
         </div>
+        <div v-if="victory" class="blocker"></div>
     </div>
 </template>
 
@@ -46,7 +47,7 @@ export default {
     },
     inject: [ 'grid', 'updateGrid', 'currentColor'],
     emits: ['updateGrid'],
-    props: ['gridRows',  'gridColumns','colors', 'hints', 'errors'],
+    props: ['gridRows',  'gridColumns','colors', 'hints', 'errors', 'victory'],
     data() {
         return {
             fauxCellWidth: 0,
@@ -120,6 +121,7 @@ export default {
     display: flex;
     user-select: none;
     justify-content: center;
+    position: relative;
 }
 .grid {
     display: grid;
@@ -156,6 +158,13 @@ export default {
 }
 .head .hints {
     justify-content: flex-end;
+}
+.blocker {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
 }
 
 </style>

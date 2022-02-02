@@ -1,5 +1,5 @@
 <template>
-    <Grid @updateCell="updateGrid" :gridRows="gridRows" :colors="colors" :gridColumns="gridColumns" :hints="hints" :errors="errors"></Grid>
+    <Grid @updateCell="updateGrid" :gridRows="gridRows" :colors="colors" :gridColumns="gridColumns" :hints="hints" :errors="errors" :victory="victory"></Grid>
     <Tools :colors='colors' 
            :currentColor="currentColor" 
            :gridRows="gridRows"
@@ -422,6 +422,7 @@ export default {
         },
         switchMode() {
             this.editMode = true;
+            this.victory = false;
         }
    
     }
