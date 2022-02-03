@@ -162,7 +162,9 @@ export default {
 
             if(!this.editMode) {
                 let dataURL = document.location.href.split('?g=')[1];
-                const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)));
+                // Some platforms replace the # character by %23, so we need to replace it back
+                const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
+                console.log(data);
                 this.correctGrid = data.grid;
                 this.gridRows = data.rows;
                 this.gridColumns = data.columns;
