@@ -29,6 +29,14 @@
                     <li>Si ce <strong>4</strong> est entouré, les cases rouges sont toutes adjacentes</li>
                     <li>S'il n'est pas entouré, elles ne sont pas toutes adjacentes</li>
                 </ul>
+
+                <h3>Raccourcis clavier</h3>
+                <ul>
+                    <li><span>1 à 5 </span> pour choisir la couleur</li>
+                    <li><span>E </span> pour la gomme</li>
+                    <li><span>Z </span> pour annuler la dernière action</li>
+                    <li><span>C </span> pour changer la couleur de fond</li>
+                </ul>
             </Modal>
             <a :href="url" class="button transparent">
                 Créer ma grille
@@ -100,6 +108,12 @@ export default {
             return window.location.origin;
         }
     },
+    created: function() {
+       window.addEventListener('keydown', this.handleKeydowns);
+    },
+    beforeUnmount() {
+        window.removeEventListener('keydown', this.handleKeydowns);
+    },
     data() {
         return {
             share: false,
@@ -122,7 +136,27 @@ export default {
             const root = document.documentElement;
 
             root.style.setProperty('--background', this.backgrounds[this.currentBackground]);
-        }
+        },
+        // Keyboard shortcuts
+        handleKeydowns(e) {
+            if (e.keyCode === 49) {
+                this.updateCurrentColor(0);
+            } else if (e.keyCode === 50) {
+                this.updateCurrentColor(1);
+            } else if (e.keyCode === 51) {
+                this.updateCurrentColor(2);
+            } else if (e.keyCode === 52) {
+                this.updateCurrentColor(3);
+            } else if (e.keyCode === 53) {
+                this.updateCurrentColor(4);
+            } else if (e.keyCode === 67) {
+                this.changeBackground();
+            } else if (e.keyCode === 69) {
+                this.updateCurrentColor('');
+            } else if (e.keyCode === 90) {
+                this.$emit('clickHistory');
+            }
+        },
     }
 }
 </script>
@@ -170,7 +204,9 @@ export default {
     margin-right: 0.5rem;
 }
 
-
+.message li {
+    line-height: 1;
+}
 label {
     display: block;
     font-size: 2rem;
