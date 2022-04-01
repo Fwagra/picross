@@ -164,7 +164,6 @@ export default {
                 let dataURL = document.location.href.split('?g=')[1];
                 // Some platforms replace the # character by %23, so we need to replace it back
                 const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
-                console.log(data);
                 this.correctGrid = data.grid;
                 this.gridRows = data.rows;
                 this.gridColumns = data.columns;
@@ -337,7 +336,9 @@ export default {
             this.colors[colorIndex] = newColor;
         },
         updateCurrentColor(color) {
-            this.currentColor = color;
+            if(color =='' || (color >= 0 && color < this.colors.length)) {
+                this.currentColor = color;
+            }
         },
         addColor() {
             this.colors.push(this.getRandomColor());
