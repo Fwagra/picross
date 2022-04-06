@@ -13,6 +13,16 @@
             <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
                 <i class="gg-edit-contrast"></i>
             </div>
+            <div v-if="!hypothesisMode" class="tool-btn hypothesis" v-tippy="{content: 'Mode hypothèse'}"  @click="$emit('enableHypothesisMode')">
+                <i class="gg-read"></i>
+            </div>
+            <div v-if="hypothesisMode" class="tool-btn validate-hypothesis" v-tippy="{content: 'Valider l\'hypothèse'}"  @click="$emit('validateHypothesis')">
+                <i class="gg-check"></i>
+            </div>
+            <div v-if="hypothesisMode" class="tool-btn reset-hypothesis" v-tippy="{content: 'Annuler l\'hypothèse'}"  @click="$emit('disableHypothesisMode')">
+                <i class="gg-close"></i>
+            </div>
+            
             <div class="tool-btn history" v-tippy="{content: 'Annuler la dernière action'}" @click="$emit('clickHistory')">
                 <i class="gg-undo"></i>
             </div>
@@ -36,6 +46,8 @@
                     <li><span>E </span> pour la gomme</li>
                     <li><span>Z </span> pour annuler la dernière action</li>
                     <li><span>C </span> pour changer la couleur de fond</li>
+                    <li><span>H </span> pour activer/annuler le mode hypothèse</li>
+                    <li><span>V </span> pour valider l'hypothèse</li>
                 </ul>
             </Modal>
             <a :href="url" class="button transparent">
@@ -91,9 +103,9 @@ export default {
         ColorTool,
         Modal
     },
-    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory'],
+    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory', 'enableHypothesisMode', 'validateHypothesis', 'disableHypothesisMode'],
     inject: [ 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory"],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory", "hypothesisMode"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
@@ -139,6 +151,7 @@ export default {
         },
         // Keyboard shortcuts
         handleKeydowns(e) {
+            console.log(e.keyCode);
             if (e.keyCode === 49) {
                 this.updateCurrentColor(0);
             } else if (e.keyCode === 50) {
@@ -155,6 +168,14 @@ export default {
                 this.updateCurrentColor('');
             } else if (e.keyCode === 90) {
                 this.$emit('clickHistory');
+            } else if (e.keyCode === 72) {
+                if(this.hypothesisMode) {
+                    this.$emit('disableHypothesisMode');
+                } else {
+                    this.$emit('enableHypothesisMode');
+                }
+            } else if (e.keyCode === 86) {
+                this.$emit('validateHypothesis');
             }
         },
     }
