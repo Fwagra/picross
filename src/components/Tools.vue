@@ -13,6 +13,16 @@
             <div @click="changeBackground" class="contrast tool-btn" v-tippy="{content: 'Changer la couleur de fond' }">
                 <i class="gg-edit-contrast"></i>
             </div>
+            <div v-if="!hypothesisMode" class="tool-btn hypothesis" v-tippy="{content: 'Mode hypothèse'}"  @click="$emit('enableHypothesisMode')">
+                <i class="gg-read"></i>
+            </div>
+            <div v-if="hypothesisMode" class="tool-btn validate-hypothesis" v-tippy="{content: 'Valider l\'hypothèse'}"  @click="$emit('validateHypothesis')">
+                <i class="gg-check"></i>
+            </div>
+            <div v-if="hypothesisMode" class="tool-btn reset-hypothesis" v-tippy="{content: 'Annuler l\'hypothèse'}"  @click="$emit('disableHypothesisMode')">
+                <i class="gg-close"></i>
+            </div>
+            
             <div class="tool-btn history" v-tippy="{content: 'Annuler la dernière action'}" @click="$emit('clickHistory')">
                 <i class="gg-undo"></i>
             </div>
@@ -91,9 +101,9 @@ export default {
         ColorTool,
         Modal
     },
-    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory'],
+    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory', 'enableHypothesisMode', 'validateHypothesis', 'disableHypothesisMode'],
     inject: [ 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory"],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory", "hypothesisMode"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];

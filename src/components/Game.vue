@@ -4,6 +4,7 @@
            :currentColor="currentColor" 
            :gridRows="gridRows"
            :gridColumns="gridColumns"
+           :hypothesisMode="hypothesisMode"
            :isFilled="isFilled"
            :shareLink="shareLink"
            :editMode="editMode"
@@ -16,6 +17,9 @@
            @updateShareLink="updateShareLink"
            @switchMode="switchMode"
            @clickHistory="moveBackFromHistory"
+           @enableHypothesisMode="enableHypothesisMode"
+           @disableHypothesisMode="disableHypothesisMode"
+           @validateHypothesis="validateHypothesis"
     ></Tools>
     <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = false"  :type="'message'" v-if="openModal"></Modal>
 </template>
@@ -37,6 +41,7 @@ export default {
     data() {
         return {
             editMode: true,
+            hypothesisMode: false,
             gridColumns: 5,
             gridRows: 5,
             grid: [],
@@ -57,6 +62,7 @@ export default {
             modalTitle: '',
             modalMessage: '',
             openModal: false,
+            gridBackup: [],
         }
     },
     computed: {
@@ -78,7 +84,7 @@ export default {
             editMode: this.editMode,
             gridColumns: this.gridColumns,
             gridRows: this.gridRows,
-            grid: this.grid,
+            grid: computed(() => this.grid),
             colors: computed(() => this.colors),
             currentColor: computed(() => this.currentColor),
             hints: this.hints,
@@ -99,17 +105,15 @@ export default {
         // Watch the stringified computed property so that we can compare the old and new grid (using the original data (array), newGrid and oldGrid are the identical since objects are passed by reference)
         stringifiedGrid: {
             handler(stringNewGrid, stringOldGrid) {
-
                 const newGrid = JSON.parse(stringNewGrid);
                 const oldGrid = JSON.parse(stringOldGrid);
-
                 // Retrieve the rows and columns that have changed
                 const gridDiffs = this.getGridDifferences(newGrid, oldGrid);
                 
                 // Update the hints for these rows and columns
                 this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
 
-                if (!this.editMode && this.isFilled && this.noErrors) {
+                if (!this.editMode && !this.hypothesisMode && this.isFilled && this.noErrors) {
                     this.checkVictory();
                 }
             },
@@ -430,7 +434,32 @@ export default {
         switchMode() {
             this.editMode = true;
             this.victory = false;
-        }
+        },
+        enableHypothesisMode() {
+            this.hypothesisMode = true;
+
+            // Save the current grid
+            this.gridBackup = JSON.parse(JSON.stringify(this.grid));
+        },
+        disableHypothesisMode() {
+            this.hypothesisMode = false;
+
+            // Restore the grid
+            this.grid = JSON.parse(JSON.stringify(this.gridBackup));
+
+            // Dump the history
+            this.history = [];
+        },
+        validateHypothesis() {
+            this.hypothesisMode = false;
+
+            // Dump the backup
+            this.gridBackup = [];
+
+            // Replace the grid by itself just to trigger the victory watcher
+            this.grid = JSON.parse(JSON.stringify(this.grid));
+
+        },
    
     }
 }
