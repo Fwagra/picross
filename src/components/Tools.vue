@@ -46,6 +46,8 @@
                     <li><span>E </span> pour la gomme</li>
                     <li><span>Z </span> pour annuler la dernière action</li>
                     <li><span>C </span> pour changer la couleur de fond</li>
+                    <li><span>H </span> pour activer/annuler le mode hypothèse</li>
+                    <li><span>V </span> pour valider l'hypothèse</li>
                 </ul>
             </Modal>
             <a :href="url" class="button transparent">
@@ -149,6 +151,7 @@ export default {
         },
         // Keyboard shortcuts
         handleKeydowns(e) {
+            console.log(e.keyCode);
             if (e.keyCode === 49) {
                 this.updateCurrentColor(0);
             } else if (e.keyCode === 50) {
@@ -165,6 +168,14 @@ export default {
                 this.updateCurrentColor('');
             } else if (e.keyCode === 90) {
                 this.$emit('clickHistory');
+            } else if (e.keyCode === 72) {
+                if(this.hypothesisMode) {
+                    this.$emit('disableHypothesisMode');
+                } else {
+                    this.$emit('enableHypothesisMode');
+                }
+            } else if (e.keyCode === 86) {
+                this.$emit('validateHypothesis');
             }
         },
     }
