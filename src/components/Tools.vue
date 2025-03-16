@@ -204,7 +204,7 @@ export default {
     background: var(--background);
 }
 [class*='gg-']{
-    --ggs: .9rem;
+    --ggs: .9;
 }
 .tool-btn:hover {
     background-color: var(--grid-separations);
