@@ -85,6 +85,9 @@
                 <input type="number" id="lines" min="3" max="15" :value="gridRows" @change="$emit('updateRows', $event.target.value)">
             </div>
         </div>
+        <div v-if="solvabilityMessage" class="solvability-indicator" :class="solvabilityMessage.status">
+            <span>{{ solvabilityMessage.text }}</span>
+        </div>
         <div class="share-part">
             <div  @[isFilled&&`click`]="openShareModal" :class='{disabled: !isFilled }' v-tippy="{ content: shareMessage }" class="share button"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
             <Modal title="Copie le lien ci-dessous et défie tes amis !"  @close="share = !share" :shareLink="shareLink" :type="'link'" v-if="share">
@@ -105,7 +108,7 @@ export default {
     },
     emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory', 'enableHypothesisMode', 'validateHypothesis', 'disableHypothesisMode'],
     inject: [ 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory", "hypothesisMode"],
+    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory", "hypothesisMode", "solvability", "solvabilityLoading"],
     computed: {
         getCurrentColor() {
             return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
@@ -118,6 +121,18 @@ export default {
         },
         url() {
             return window.location.origin;
+        },
+        solvabilityMessage() {
+            if (!this.isFilled) return null;
+            if (this.solvabilityLoading) return { text: 'Analyse en cours…', status: 'loading' };
+            if (!this.solvability) return null;
+            if (this.solvability.unique) {
+                return { text: '✓ Ce picross a une solution unique', status: 'success' };
+            }
+            if (this.solvability.solutions === 0) {
+                return { text: '✗ Ce picross n\'a aucune solution', status: 'error' };
+            }
+            return { text: '⚠ Ce picross a plusieurs solutions possibles', status: 'warning' };
         }
     },
     created: function() {
@@ -271,6 +286,35 @@ label {
 }
 .eraser.current::before {
     transform: translateY(-2rem);
+}
+.solvability-indicator {
+    margin-top: 1.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 1.5rem;
+    text-align: center;
+    line-height: 1.2;
+    transition: all 0.3s ease;
+}
+.solvability-indicator.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+.solvability-indicator.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+.solvability-indicator.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+.solvability-indicator.loading {
+    background-color: #e2e3e5;
+    color: #383d41;
+    border: 1px solid #d6d8db;
 }
 @media screen and (min-width: 600px) {
     .toolbar:first-of-type {
