@@ -9,6 +9,8 @@
            :shareLink="shareLink"
            :editMode="editMode"
            :victory="victory"
+           :solvability="solvability"
+           :solvabilityLoading="solvabilityLoading"
            @removeColor="removeColor" 
            @addColor="addColor" 
            @updateRows="updateRows"
@@ -31,6 +33,7 @@ import Tools from './Tools.vue';
 import Modal from './Modal.vue';
 import JSONCrush from 'jsoncrush';
 import { computed } from 'vue';
+import { checkSolvability } from '../solver.js';
 
 export default {
     components: {
@@ -63,6 +66,9 @@ export default {
             modalMessage: '',
             openModal: false,
             gridBackup: [],
+            solvability: null,
+            solvability_loading: false,
+            solvability_debounce: null,
         }
     },
     computed: {
@@ -74,6 +80,9 @@ export default {
         },
         isFilled() {
             return this.grid.every(row => row.every(cell => cell !== ''));
+        },
+        solvabilityLoading() {
+            return this.solvability_loading;
         },
         noErrors() {
             return this.errors.rows.every(error => error === false) && this.errors.columns.every(error => error === false);
@@ -115,6 +124,10 @@ export default {
 
                 if (!this.editMode && !this.hypothesisMode && this.isFilled && this.noErrors) {
                     this.checkVictory();
+                }
+
+                if (this.editMode) {
+                    this.scheduleSolvabilityCheck();
                 }
             },
             deep: true
@@ -256,6 +269,8 @@ export default {
                 // Trim the hints from removed rows/columns
                 this.hints.rows = this.hints.rows.slice(0, this.gridRows);
                 this.hints.columns = this.hints.columns.slice(0, this.gridColumns);
+
+                this.scheduleSolvabilityCheck();
             }
 
         },
@@ -430,6 +445,29 @@ export default {
                 this.modalTitle = "Dommage !";
                 this.modalMessage = "Toutes les cases sont remplies, mais elles ne correspondent pas à la solution. Tu peux fermer cette fenêtre et tenter de corriger !";
             }
+        },
+        scheduleSolvabilityCheck() {
+            if (!this.editMode || !this.isFilled) {
+                this.solvability = null;
+                this.solvability_loading = false;
+                return;
+            }
+
+            this.solvability_loading = true;
+
+            if (this.solvability_debounce) {
+                clearTimeout(this.solvability_debounce);
+            }
+
+            this.solvability_debounce = setTimeout(() => {
+                this.solvability = checkSolvability({
+                    rows: this.gridRows,
+                    columns: this.gridColumns,
+                    hints: this.hints,
+                    colorCount: this.colors.length
+                });
+                this.solvability_loading = false;
+            }, 300);
         },
         switchMode() {
             this.editMode = true;
