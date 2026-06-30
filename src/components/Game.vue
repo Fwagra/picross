@@ -175,21 +175,64 @@ export default {
     methods: {
         checkMode() {
             const params =  new URLSearchParams(document.location.search);
-            this.editMode = !params.has('g');
 
-            if(!this.editMode) {
-                let dataURL = document.location.href.split('?g=')[1];
-                // Some platforms replace the # character by %23, so we need to replace it back
-                const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
-                this.correctGrid = data.grid;
-                this.gridRows = data.rows;
-                this.gridColumns = data.columns;
-                this.colors = data.colors;
-                this.hints = data.hints;
+            // Nouveau format compact : ?p=  (voir loadCompactPuzzle)
+            if(params.has('p')) {
+                this.editMode = false;
+                this.loadCompactPuzzle();
+            // Ancien format historique : ?g=  (conservé pour la rétro-compatibilité)
+            } else if(params.has('g')) {
+                this.editMode = false;
+                this.loadLegacyPuzzle();
             } else {
+                this.editMode = true;
                 this.colors.push(this.getRandomColor());
                 this.colors.push(this.getRandomColor());
             }
+        },
+        // Décode le nouveau format compact : grille aplatie en chaîne (1 caractère
+        // base36 par cellule), largeur et couleurs sans le « # ». Les indices
+        // (hints) sont recalculés à partir de la grille au lieu d'être transportés.
+        loadCompactPuzzle() {
+            const encodedData = document.location.href.split('?p=')[1];
+            const data = JSON.parse(JSONCrush.uncrush(decodeURIComponent(encodedData)));
+
+            const width = data.w;
+            const cells = data.g.split('').map(character => parseInt(character, 36));
+            const grid = [];
+            for(let i = 0; i < cells.length; i += width) {
+                grid.push(cells.slice(i, i + width));
+            }
+
+            // Les couleurs doivent être définies avant le calcul des indices
+            this.colors = data.c.map(color => '#' + color);
+            this.correctGrid = grid;
+            this.gridRows = grid.length;
+            this.gridColumns = width;
+            this.hints = this.computeHints(grid);
+        },
+        // Décode l'ancien format : le JSON complet (grille, couleurs, dimensions
+        // et indices) était embarqué tel quel dans l'URL.
+        loadLegacyPuzzle() {
+            let dataURL = document.location.href.split('?g=')[1];
+            // Certaines plateformes remplacent le caractère # par %23, on le restaure
+            const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
+            this.correctGrid = data.grid;
+            this.gridRows = data.rows;
+            this.gridColumns = data.columns;
+            this.colors = data.colors;
+            this.hints = data.hints;
+        },
+        // Recalcule les indices (lignes et colonnes) à partir d'une grille de solution
+        computeHints(grid) {
+            const rows = grid.map(row => this.getHints(row));
+            const columns = [];
+            const columnCount = grid.length > 0 ? grid[0].length : 0;
+            for(let columnIndex = 0; columnIndex < columnCount; columnIndex++) {
+                const columnCells = grid.map(row => row[columnIndex]);
+                columns.push(this.getHints(columnCells));
+            }
+            return { rows, columns };
         },
         // Generate the grid array with the correct number of rows and columns
         generateGrid() {
@@ -402,19 +445,23 @@ export default {
             }
         },
         getShareLink() {
-    
+
+            // Format compact : on ne transporte que le strict nécessaire.
+            // - g : grille aplatie en une chaîne (1 caractère base36 par cellule)
+            // - w : largeur (la hauteur se déduit de la longueur de g)
+            // - c : couleurs sans le « # » (ré-ajouté au chargement)
+            // Les indices (hints) et le nombre de lignes ne sont PAS embarqués :
+            // ils sont recalculés/déduits côté lecture, ce qui raccourcit l'URL.
             const data = {
-                grid: this.grid,
-                colors: this.colors,
-                rows: this.gridRows,
-                columns: this.gridColumns,
-                hints: this.hints
+                g: this.grid.map(row => row.map(value => Number(value).toString(36)).join('')).join(''),
+                w: this.gridColumns,
+                c: this.colors.map(color => color.replace('#', ''))
             };
 
-            // JSONCrush higly compresses a JSON string
-            const encodedData = encodeURI(JSONCrush.crush(JSON.stringify(data)));
-            return `${window.location.origin}?g=${encodedData}`;
-        
+            // JSONCrush compresse fortement la chaîne JSON
+            const encodedData = encodeURIComponent(JSONCrush.crush(JSON.stringify(data)));
+            return `${window.location.origin}?p=${encodedData}`;
+
         },
         updateShareLink() {
             this.shareLink = this.getShareLink();
