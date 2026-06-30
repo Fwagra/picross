@@ -294,8 +294,8 @@ label {
     font-size: 1.5rem;
     text-align: center;
     line-height: 1.2;
-    width: 280px;
-    max-width: 100%;
+    width: 100%;
+    min-height: 3rem;
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 .solvability-indicator.success {
