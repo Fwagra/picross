@@ -319,12 +319,16 @@ label {
     border: 1px solid #d6d8db;
 }
 @media screen and (min-width: 600px) {
+    aside {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
     .toolbar:first-of-type {
         padding-top: 5rem;
     }
     .toolbar {
         justify-content: flex-start;
-
     }
 }
 </style>
