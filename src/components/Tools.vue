@@ -304,6 +304,7 @@ label {
     line-height: 1.2;
     width: 100%;
     min-height: 3rem;
+    overflow-wrap: break-word;
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 .solvability-indicator.success {
@@ -327,11 +328,6 @@ label {
     border: 1px solid #d6d8db;
 }
 @media screen and (min-width: 600px) {
-    aside {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-    }
     .toolbar:first-of-type {
         padding-top: 5rem;
     }
