@@ -85,8 +85,10 @@
                 <input type="number" id="lines" min="3" max="15" :value="gridRows" @change="$emit('updateRows', $event.target.value)">
             </div>
         </div>
-        <div v-if="solvabilityMessage" class="solvability-indicator" :class="solvabilityMessage.status">
-            <span>{{ solvabilityMessage.text }}</span>
+        <div v-if="solvabilityMessage" class="solvability-wrapper">
+            <div class="solvability-indicator" :class="solvabilityMessage.status">
+                <span>{{ solvabilityMessage.text }}</span>
+            </div>
         </div>
         <div class="share-part">
             <div  @[isFilled&&`click`]="openShareModal" :class='{disabled: !isFilled }' v-tippy="{ content: shareMessage }" class="share button"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
@@ -295,15 +297,21 @@ label {
 .eraser.current::before {
     transform: translateY(-2rem);
 }
-.solvability-indicator {
+.solvability-wrapper {
+    position: relative;
+    min-height: 3.5rem;
     margin-top: 1.5rem;
+}
+.solvability-indicator {
+    position: absolute;
+    left: 0;
+    right: 0;
     padding: 0.6rem 1rem;
     border-radius: 0.5rem;
     font-size: 1.5rem;
     text-align: center;
     line-height: 1.2;
-    width: 100%;
-    min-height: 3rem;
+    overflow-wrap: break-word;
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 .solvability-indicator.success {
@@ -326,12 +334,7 @@ label {
     color: #383d41;
     border: 1px solid #d6d8db;
 }
-@media screen and (min-width: 600px) {
-    aside {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-    }
+@media screen and (min-width: 1100px) {
     .toolbar:first-of-type {
         padding-top: 5rem;
     }

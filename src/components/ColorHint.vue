@@ -40,7 +40,7 @@ span {
     visibility: hidden;
 }
 
-@media screen and (min-width: 600px) {
+@media screen and (min-width: 1100px) {
     span {
         --font-size: 1.8rem
     }
