@@ -166,7 +166,9 @@ export default {
         },
         // Keyboard shortcuts
         handleKeydowns(e) {
-            console.log(e.keyCode);
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            let handled = true;
             if (e.keyCode === 49) {
                 this.updateCurrentColor(0);
             } else if (e.keyCode === 50) {
@@ -191,6 +193,12 @@ export default {
                 }
             } else if (e.keyCode === 86) {
                 this.$emit('validateHypothesis');
+            } else {
+                handled = false;
+            }
+
+            if (handled) {
+                e.preventDefault();
             }
         },
     }
