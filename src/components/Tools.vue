@@ -334,7 +334,7 @@ label {
     color: #383d41;
     border: 1px solid #d6d8db;
 }
-@media screen and (min-width: 600px) {
+@media screen and (min-width: 1100px) {
     .toolbar:first-of-type {
         padding-top: 5rem;
     }
