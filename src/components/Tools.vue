@@ -128,6 +128,9 @@ export default {
             if (!this.isFilled) return null;
             if (this.solvabilityLoading) return { text: 'Analyse en cours…', status: 'loading' };
             if (!this.solvability) return null;
+            if (this.solvability.reason === 'too_complex') {
+                return { text: '… Grille trop complexe à analyser', status: 'loading' };
+            }
             if (this.solvability.unique) {
                 return { text: '✓ Ce picross a une solution unique', status: 'success' };
             }
