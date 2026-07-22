@@ -9,16 +9,18 @@ UI / messages / commentaires utiles en **français** (tutoiement).
 ## Commandes
 
 ```text
-yarn install | yarn serve | yarn build | yarn lint
+npm install | npm run serve | npm run build | npm test | npm run lint
 ```
 
-Préférer **yarn** (`yarn.lock` ; ignorer `package-lock.json`). Stack : Vue 3 + Vue CLI 4, Options API, pas de TS / Pinia / tests.
+Préférer **npm** uniquement (`package-lock.json` ; ne pas committer `yarn.lock`). Stack : Vue 3 + **Vite**, Options API, pas de TS / Pinia. Tests : **Vitest** (`src/**/*.test.js`).
+
+Node **18+** recommandé (plus besoin de `NODE_OPTIONS=--openssl-legacy-provider` depuis la migration Vite).
 
 ## Architecture et portée des diffs
 
-- Entrée : `main.js` → `App.vue` → **`Game.vue`** (état + `provide`/`inject` + watchers).
+- Entrée : `index.html` → `main.js` → `App.vue` → **`Game.vue`** (état + `provide`/`inject` + watchers).
 - UI : `Grid` / `Cell` / `Hints` / `Tools` / `Modal` ; logique pure : `src/solver.js`, `src/hints.js`, `src/puzzleUrl.js` ; styles globaux : `src/assets/style.css`.
-- **Portée** : diff local dans le composant concerné ; ne toucher `Game.vue` que pour l’état partagé ; ne pas ajouter de store ni migrer Vite sans demande.
+- **Portée** : diff local dans le composant concerné ; ne toucher `Game.vue` que pour l’état partagé ; ne pas ajouter de store sans demande.
 
 ## Domaine (critique)
 
@@ -47,8 +49,9 @@ Puzzle calme : police **Dongle**, fond via `--background` (cycle `#e9e9e9` → `
 ## Conventions
 
 - Options API, props/emits + inject depuis `Game`.
-- CamelCase côté Vue ; snake_case dans `solver.js`.
+- CamelCase côté Vue / `hints.js` / `puzzleUrl.js` ; snake_case dans `solver.js`.
 - Touch/drag (`Cell`/`Grid`) : modifier avec prudence (mobile).
+- Raccourcis couleurs : `e.code` (`Digit1`–`Digit5`) pour rester correct en AZERTY.
 
 ## Pièges
 
