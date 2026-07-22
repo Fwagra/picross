@@ -177,54 +177,100 @@ export default {
     },
     methods: {
         checkMode() {
-            const params =  new URLSearchParams(document.location.search);
+            const params = new URLSearchParams(document.location.search);
 
             // Nouveau format compact : ?p=  (voir loadCompactPuzzle)
-            if(params.has('p')) {
-                this.editMode = false;
-                this.loadCompactPuzzle();
+            if (params.has('p')) {
+                if (this.loadCompactPuzzle()) {
+                    this.editMode = false;
+                } else {
+                    this.fallbackToEditMode();
+                }
             // Ancien format historique : ?g=  (conservé pour la rétro-compatibilité)
-            } else if(params.has('g')) {
-                this.editMode = false;
-                this.loadLegacyPuzzle();
+            } else if (params.has('g')) {
+                if (this.loadLegacyPuzzle()) {
+                    this.editMode = false;
+                } else {
+                    this.fallbackToEditMode();
+                }
             } else {
                 this.editMode = true;
                 this.colors.push(this.getRandomColor());
                 this.colors.push(this.getRandomColor());
             }
         },
+        // Retire ?p= / ?g= pour qu'un refresh ne relance pas le mode jeu.
+        clearPuzzleQuery() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('p');
+            url.searchParams.delete('g');
+            const search = url.searchParams.toString();
+            window.history.replaceState({}, '', url.pathname + (search ? `?${search}` : '') + url.hash);
+        },
+        fallbackToEditMode() {
+            this.editMode = true;
+            this.clearPuzzleQuery();
+            if (this.colors.length === 0) {
+                this.colors.push(this.getRandomColor());
+                this.colors.push(this.getRandomColor());
+            }
+            this.modalTitle = 'Oups !';
+            this.modalMessage = 'Ce lien de picross est invalide ou corrompu. Tu peux créer une nouvelle grille.';
+            this.openModal = true;
+        },
         // Décode le nouveau format compact : grille aplatie en chaîne (1 caractère
         // base36 par cellule), largeur et couleurs sans le « # ». Les indices
         // (hints) sont recalculés à partir de la grille au lieu d'être transportés.
+        // Retourne true si le chargement a réussi.
         loadCompactPuzzle() {
-            const encodedData = document.location.href.split('?p=')[1];
-            const data = JSON.parse(JSONCrush.uncrush(decodeURIComponent(encodedData)));
+            try {
+                const encodedData = document.location.href.split('?p=')[1];
+                if (!encodedData) throw new Error('payload manquant');
 
-            const width = data.w;
-            const cells = data.g.split('').map(character => parseInt(character, 36));
-            const grid = [];
-            for(let i = 0; i < cells.length; i += width) {
-                grid.push(cells.slice(i, i + width));
+                const data = JSON.parse(JSONCrush.uncrush(decodeURIComponent(encodedData)));
+                if (!data.w || !data.g || !Array.isArray(data.c)) throw new Error('payload invalide');
+
+                const width = data.w;
+                const cells = data.g.split('').map(character => parseInt(character, 36));
+                const grid = [];
+                for (let i = 0; i < cells.length; i += width) {
+                    grid.push(cells.slice(i, i + width));
+                }
+
+                // Les couleurs doivent être définies avant le calcul des indices
+                this.colors = data.c.map(color => '#' + color);
+                this.correctGrid = grid;
+                this.gridRows = grid.length;
+                this.gridColumns = width;
+                this.hints = this.computeHints(grid);
+                return true;
+            } catch (e) {
+                console.error('Impossible de charger le picross compact', e);
+                return false;
             }
-
-            // Les couleurs doivent être définies avant le calcul des indices
-            this.colors = data.c.map(color => '#' + color);
-            this.correctGrid = grid;
-            this.gridRows = grid.length;
-            this.gridColumns = width;
-            this.hints = this.computeHints(grid);
         },
         // Décode l'ancien format : le JSON complet (grille, couleurs, dimensions
         // et indices) était embarqué tel quel dans l'URL.
+        // Retourne true si le chargement a réussi.
         loadLegacyPuzzle() {
-            let dataURL = document.location.href.split('?g=')[1];
-            // Certaines plateformes remplacent le caractère # par %23, on le restaure
-            const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
-            this.correctGrid = data.grid;
-            this.gridRows = data.rows;
-            this.gridColumns = data.columns;
-            this.colors = data.colors;
-            this.hints = data.hints;
+            try {
+                const dataURL = document.location.href.split('?g=')[1];
+                if (!dataURL) throw new Error('payload manquant');
+
+                // Certaines plateformes remplacent le caractère # par %23, on le restaure
+                const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
+                if (!data.grid || !data.colors || !data.hints) throw new Error('payload invalide');
+
+                this.correctGrid = data.grid;
+                this.gridRows = data.rows;
+                this.gridColumns = data.columns;
+                this.colors = data.colors;
+                this.hints = data.hints;
+                return true;
+            } catch (e) {
+                console.error('Impossible de charger le picross legacy', e);
+                return false;
+            }
         },
         // Recalcule les indices (lignes et colonnes) à partir d'une grille de solution
         computeHints(grid) {
@@ -428,13 +474,13 @@ export default {
         },
         updateRows(newRowsString) {
             const newRowsNumber = Number(newRowsString);
-            if(newRowsNumber >= 3 && newRowsNumber <= 20) {
+            if (newRowsNumber >= 3 && newRowsNumber <= 15) {
                 this.gridRows = newRowsNumber;
             }
         },
         updateCols(newColsString) {
             const newColsNumber = Number(newColsString);
-            if(newColsNumber >= 3 && newColsNumber <= 20) {
+            if (newColsNumber >= 3 && newColsNumber <= 15) {
                 this.gridColumns = newColsNumber;
             }
         },
@@ -522,6 +568,7 @@ export default {
         switchMode() {
             this.editMode = true;
             this.victory = false;
+            this.clearPuzzleQuery();
         },
         enableHypothesisMode() {
             this.hypothesisMode = true;

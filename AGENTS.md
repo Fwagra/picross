@@ -26,7 +26,7 @@ Ce n’est **pas** un picross classique (suites de blocs).
 
 - Cellule : index couleur `0..n-1` ou `""` (gomme).
 - Indice par ligne/colonne **et par couleur** : `{ number, contiguous }` (`contiguous` = toutes adjacentes ; pastille dans l’UI).
-- Couleurs **2–5** ; dimensions **3–15** (aligner UI et logique sur 15 — l’écart actuel `max=15` vs code `<=20` est un bug à corriger si on y touche, sinon ne pas élargir à 20).
+- Couleurs **2–5** ; dimensions **3–15** (UI et logique alignées).
 - Modes : édition (pas de query) | jeu (`?p=` ou legacy `?g=`) | hypothèse (backup grille).
 
 ## Partage URL (ne pas casser)
