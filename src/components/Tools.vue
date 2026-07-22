@@ -94,6 +94,7 @@
             <div  @[isFilled&&`click`]="openShareModal" :class='{disabled: !isFilled }' v-tippy="{ content: shareMessage }" class="share button"><i class="gg-link"></i> <span>Partager mon Picross</span></div>
             <Modal title="Copie le lien ci-dessous et défie tes amis !"  @close="share = !share" :shareLink="shareLink" :type="'link'" v-if="share">
             </Modal>
+            <a :href="dailyUrl" class="button transparent daily-link"><i class="gg-calendar"></i> <span>Grille du jour</span></a>
         </div>
     </template>
     </aside>
@@ -123,6 +124,9 @@ export default {
         },
         url() {
             return window.location.origin;
+        },
+        dailyUrl() {
+            return `${window.location.origin}/daily`;
         },
         solvabilityMessage() {
             if (!this.isFilled) return null;
@@ -280,6 +284,17 @@ label {
 }
 .share span {
     margin-left: 1rem;
+}
+.daily-link {
+    margin-top: 1rem;
+    padding: .5rem 1.5rem .5rem 2rem;
+}
+.daily-link span {
+    margin-left: 1rem;
+}
+/* Dongle : les glyphes montent dans l’em-square ; on remonte l’icône pour l’aligner au texte */
+.daily-link .gg-calendar {
+    transform: scale(var(--ggs, 1)) translateY(-0.05em);
 }
 
 .eraser {

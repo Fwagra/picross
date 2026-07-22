@@ -19,7 +19,7 @@ Node **18+** recommandé (plus besoin de `NODE_OPTIONS=--openssl-legacy-provider
 ## Architecture et portée des diffs
 
 - Entrée : `index.html` → `main.js` → `App.vue` → **`Game.vue`** (état + `provide`/`inject` + watchers).
-- UI : `Grid` / `Cell` / `Hints` / `Tools` / `Modal` ; logique pure : `src/solver.js`, `src/hints.js`, `src/puzzleUrl.js` ; styles globaux : `src/assets/style.css`.
+- UI : `Grid` / `Cell` / `Hints` / `Tools` / `Modal` ; logique pure : `src/solver.js`, `src/hints.js`, `src/puzzleUrl.js`, `src/daily.js` ; styles globaux : `src/assets/style.css`.
 - **Portée** : diff local dans le composant concerné ; ne toucher `Game.vue` que pour l’état partagé ; ne pas ajouter de store sans demande.
 
 ## Domaine (critique)
@@ -29,12 +29,18 @@ Ce n’est **pas** un picross classique (suites de blocs).
 - Cellule : index couleur `0..n-1` ou `""` (gomme).
 - Indice par ligne/colonne **et par couleur** : `{ number, contiguous }` (`contiguous` = toutes adjacentes ; pastille dans l’UI).
 - Couleurs **2–5** ; dimensions **3–15** (UI et logique alignées).
-- Modes : édition (pas de query) | jeu (`?p=` ou legacy `?g=`) | hypothèse (backup grille).
+- Modes : édition (pas de query) | jeu (`?p=` ou legacy `?g=`) | daily (`/daily`) | hypothèse (backup grille).
 
 ## Partage URL (ne pas casser)
 
 - `?p=` compact : `{ g, w, c }` (grille base36, largeur, couleurs sans `#`) ; hints recalculés à la lecture.
 - `?g=` legacy : conserver pour rétrocompatibilité.
+
+## Daily (sans backend)
+
+- Calendrier : [`src/daily/calendar.json`](src/daily/calendar.json) — clé `YYYY-MM-DD` → tableau de payloads (partie après `?p=`, ou URL complète).
+- Logique : [`src/daily.js`](src/daily.js) — date locale, tirage **déterministe** si plusieurs grilles, fallback sur la dernière date ≤ aujourd’hui.
+- Route `/daily` détectée via `pathname` (pas de vue-router). Sur Netlify : rewrite SPA via [`public/_redirects`](public/_redirects) (`/* → /index.html` 200).
 
 ## Solveur
 

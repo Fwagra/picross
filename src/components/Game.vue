@@ -35,6 +35,7 @@ import { computed } from 'vue';
 import { checkSolvability } from '../solver.js';
 import { computeHints as buildHints, getHints as buildLineHints, getHintsForColor } from '../hints.js';
 import { decodeCompactPuzzle, decodeLegacyPuzzle, encodeCompactPuzzle } from '../puzzleUrl.js';
+import { getTodayKey, isDailyPath, loadDailyForDate } from '../daily.js';
 
 export default {
     components: {
@@ -42,9 +43,12 @@ export default {
         Tools,
         Modal
     },
+    emits: ['daily-state'],
     data() {
         return {
             editMode: true,
+            dailyMode: false,
+            dailyDateKey: null,
             hypothesisMode: false,
             gridColumns: 5,
             gridRows: 5,
@@ -113,7 +117,7 @@ export default {
         this.checkMode();
         // Generate the grid array with the correct number of rows and columns
         this.generateGrid();
-
+        this.emitDailyState();
     },
     watch: {
         // When the grid is updated, update the grid hints
@@ -196,11 +200,24 @@ export default {
                 } else {
                     this.fallbackToEditMode();
                 }
+            } else if (isDailyPath()) {
+                if (this.loadDailyPuzzle()) {
+                    this.editMode = false;
+                    this.dailyMode = true;
+                } else {
+                    this.fallbackToEditMode('Aucun daily n\'est disponible pour aujourd\'hui. Tu peux créer une nouvelle grille.');
+                }
             } else {
                 this.editMode = true;
                 this.colors.push(this.getRandomColor());
                 this.colors.push(this.getRandomColor());
             }
+        },
+        emitDailyState() {
+            this.$emit('daily-state', {
+                dailyMode: this.dailyMode,
+                dailyDateKey: this.dailyDateKey,
+            });
         },
         // Retire ?p= / ?g= pour qu'un refresh ne relance pas le mode jeu.
         clearPuzzleQuery() {
@@ -208,28 +225,34 @@ export default {
             url.searchParams.delete('p');
             url.searchParams.delete('g');
             const search = url.searchParams.toString();
-            window.history.replaceState({}, '', url.pathname + (search ? `?${search}` : '') + url.hash);
+            const path = isDailyPath(url.pathname) ? '/' : url.pathname;
+            window.history.replaceState({}, '', path + (search ? `?${search}` : '') + url.hash);
         },
-        fallbackToEditMode() {
+        fallbackToEditMode(message = 'Ce lien de picross est invalide ou corrompu. Tu peux créer une nouvelle grille.') {
             this.editMode = true;
+            this.dailyMode = false;
+            this.dailyDateKey = null;
             this.clearPuzzleQuery();
+            this.emitDailyState();
             if (this.colors.length === 0) {
                 this.colors.push(this.getRandomColor());
                 this.colors.push(this.getRandomColor());
             }
             this.modalTitle = 'Oups !';
-            this.modalMessage = 'Ce lien de picross est invalide ou corrompu. Tu peux créer une nouvelle grille.';
+            this.modalMessage = message;
             this.openModal = true;
+        },
+        applyPuzzle(puzzle) {
+            this.colors = puzzle.colors;
+            this.correctGrid = puzzle.grid;
+            this.gridRows = puzzle.gridRows;
+            this.gridColumns = puzzle.gridColumns;
+            this.hints = puzzle.hints;
         },
         // Décode le format compact (?p=). Retourne true si le chargement a réussi.
         loadCompactPuzzle() {
             try {
-                const puzzle = decodeCompactPuzzle(document.location.href);
-                this.colors = puzzle.colors;
-                this.correctGrid = puzzle.grid;
-                this.gridRows = puzzle.gridRows;
-                this.gridColumns = puzzle.gridColumns;
-                this.hints = puzzle.hints;
+                this.applyPuzzle(decodeCompactPuzzle(document.location.href));
                 return true;
             } catch (e) {
                 console.error('Impossible de charger le picross compact', e);
@@ -239,15 +262,22 @@ export default {
         // Décode l'ancien format (?g=). Retourne true si le chargement a réussi.
         loadLegacyPuzzle() {
             try {
-                const puzzle = decodeLegacyPuzzle(document.location.href);
-                this.correctGrid = puzzle.grid;
-                this.gridRows = puzzle.gridRows;
-                this.gridColumns = puzzle.gridColumns;
-                this.colors = puzzle.colors;
-                this.hints = puzzle.hints;
+                this.applyPuzzle(decodeLegacyPuzzle(document.location.href));
                 return true;
             } catch (e) {
                 console.error('Impossible de charger le picross legacy', e);
+                return false;
+            }
+        },
+        // Charge le daily du jour depuis le calendrier embarqué.
+        loadDailyPuzzle() {
+            try {
+                const puzzle = loadDailyForDate(getTodayKey());
+                this.applyPuzzle(puzzle);
+                this.dailyDateKey = puzzle.dateKey;
+                return true;
+            } catch (e) {
+                console.error('Impossible de charger le daily', e);
                 return false;
             }
         },
@@ -504,8 +534,11 @@ export default {
         },
         switchMode() {
             this.editMode = true;
+            this.dailyMode = false;
+            this.dailyDateKey = null;
             this.victory = false;
             this.clearPuzzleQuery();
+            this.emitDailyState();
         },
         enableHypothesisMode() {
             this.hypothesisMode = true;

@@ -9,10 +9,13 @@ import { computeHints } from './hints.js';
 
 /**
  * Décode le format compact (?p=).
+ * Accepte une URL complète ou le payload seul (après ?p=).
  * @returns {{ grid: number[][], colors: string[], gridRows: number, gridColumns: number, hints: object }}
  */
-export function decodeCompactPuzzle(href) {
-    const encodedData = href.split('?p=')[1];
+export function decodeCompactPuzzle(hrefOrPayload) {
+    const encodedData = hrefOrPayload.includes('?p=')
+        ? hrefOrPayload.split('?p=')[1]
+        : hrefOrPayload;
     if (!encodedData) throw new Error('payload manquant');
 
     const data = JSON.parse(JSONCrush.uncrush(decodeURIComponent(encodedData)));

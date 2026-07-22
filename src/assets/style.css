@@ -394,7 +394,42 @@ div.tippy-box {
     border-bottom-right-radius: 40px;
     right: -6px;
   }
-  
+
+  .gg-calendar {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    transform: scale(var(--ggs, 1));
+    width: 14px;
+    height: 14px;
+    border: 2px solid;
+    border-radius: 2px;
+  }
+  .gg-calendar::before {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute;
+    width: 2px;
+    height: 4px;
+    background: currentColor;
+    border-radius: 2px;
+    top: -4px;
+    left: 2px;
+    box-shadow: 6px 0 0;
+  }
+  .gg-calendar::after {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute;
+    width: 14px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+    top: 2px;
+    left: -2px;
+  }
 
   
 @media screen and (min-width: 1100px) {
