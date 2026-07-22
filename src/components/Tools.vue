@@ -170,33 +170,36 @@ export default {
             root.style.setProperty('--background', this.backgrounds[this.currentBackground]);
         },
         // Keyboard shortcuts
+        // Couleurs : e.code (Digit1–5) pour rester correct en AZERTY
+        // (e.key sans Shift donne & é " ' ( sur ces touches).
         handleKeydowns(e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            // Laisse passer les raccourcis navigateur (Ctrl/Cmd+C, etc.)
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
 
+            const digit = /^Digit([1-5])$/.exec(e.code) || /^Numpad([1-5])$/.exec(e.code);
+            if (digit) {
+                this.updateCurrentColor(Number(digit[1]) - 1);
+                e.preventDefault();
+                return;
+            }
+
+            const key = e.key.toLowerCase();
             let handled = true;
-            if (e.keyCode === 49) {
-                this.updateCurrentColor(0);
-            } else if (e.keyCode === 50) {
-                this.updateCurrentColor(1);
-            } else if (e.keyCode === 51) {
-                this.updateCurrentColor(2);
-            } else if (e.keyCode === 52) {
-                this.updateCurrentColor(3);
-            } else if (e.keyCode === 53) {
-                this.updateCurrentColor(4);
-            } else if (e.keyCode === 67) {
+
+            if (key === 'c') {
                 this.changeBackground();
-            } else if (e.keyCode === 69) {
+            } else if (key === 'e') {
                 this.updateCurrentColor('');
-            } else if (e.keyCode === 90) {
+            } else if (key === 'z') {
                 this.$emit('clickHistory');
-            } else if (e.keyCode === 72) {
-                if(this.hypothesisMode) {
+            } else if (key === 'h') {
+                if (this.hypothesisMode) {
                     this.$emit('disableHypothesisMode');
                 } else {
                     this.$emit('enableHypothesisMode');
                 }
-            } else if (e.keyCode === 86) {
+            } else if (key === 'v') {
                 this.$emit('validateHypothesis');
             } else {
                 handled = false;

@@ -31,9 +31,10 @@
 import Grid from './Grid.vue';
 import Tools from './Tools.vue';
 import Modal from './Modal.vue';
-import JSONCrush from 'jsoncrush';
 import { computed } from 'vue';
 import { checkSolvability } from '../solver.js';
+import { computeHints as buildHints, getHints as buildLineHints, getHintsForColor } from '../hints.js';
+import { decodeCompactPuzzle, decodeLegacyPuzzle, encodeCompactPuzzle } from '../puzzleUrl.js';
 
 export default {
     components: {
@@ -218,54 +219,30 @@ export default {
             this.modalMessage = 'Ce lien de picross est invalide ou corrompu. Tu peux créer une nouvelle grille.';
             this.openModal = true;
         },
-        // Décode le nouveau format compact : grille aplatie en chaîne (1 caractère
-        // base36 par cellule), largeur et couleurs sans le « # ». Les indices
-        // (hints) sont recalculés à partir de la grille au lieu d'être transportés.
-        // Retourne true si le chargement a réussi.
+        // Décode le format compact (?p=). Retourne true si le chargement a réussi.
         loadCompactPuzzle() {
             try {
-                const encodedData = document.location.href.split('?p=')[1];
-                if (!encodedData) throw new Error('payload manquant');
-
-                const data = JSON.parse(JSONCrush.uncrush(decodeURIComponent(encodedData)));
-                if (!data.w || !data.g || !Array.isArray(data.c)) throw new Error('payload invalide');
-
-                const width = data.w;
-                const cells = data.g.split('').map(character => parseInt(character, 36));
-                const grid = [];
-                for (let i = 0; i < cells.length; i += width) {
-                    grid.push(cells.slice(i, i + width));
-                }
-
-                // Les couleurs doivent être définies avant le calcul des indices
-                this.colors = data.c.map(color => '#' + color);
-                this.correctGrid = grid;
-                this.gridRows = grid.length;
-                this.gridColumns = width;
-                this.hints = this.computeHints(grid);
+                const puzzle = decodeCompactPuzzle(document.location.href);
+                this.colors = puzzle.colors;
+                this.correctGrid = puzzle.grid;
+                this.gridRows = puzzle.gridRows;
+                this.gridColumns = puzzle.gridColumns;
+                this.hints = puzzle.hints;
                 return true;
             } catch (e) {
                 console.error('Impossible de charger le picross compact', e);
                 return false;
             }
         },
-        // Décode l'ancien format : le JSON complet (grille, couleurs, dimensions
-        // et indices) était embarqué tel quel dans l'URL.
-        // Retourne true si le chargement a réussi.
+        // Décode l'ancien format (?g=). Retourne true si le chargement a réussi.
         loadLegacyPuzzle() {
             try {
-                const dataURL = document.location.href.split('?g=')[1];
-                if (!dataURL) throw new Error('payload manquant');
-
-                // Certaines plateformes remplacent le caractère # par %23, on le restaure
-                const data = JSON.parse(JSONCrush.uncrush(decodeURI(dataURL)).replace(/%23/g, '#'));
-                if (!data.grid || !data.colors || !data.hints) throw new Error('payload invalide');
-
-                this.correctGrid = data.grid;
-                this.gridRows = data.rows;
-                this.gridColumns = data.columns;
-                this.colors = data.colors;
-                this.hints = data.hints;
+                const puzzle = decodeLegacyPuzzle(document.location.href);
+                this.correctGrid = puzzle.grid;
+                this.gridRows = puzzle.gridRows;
+                this.gridColumns = puzzle.gridColumns;
+                this.colors = puzzle.colors;
+                this.hints = puzzle.hints;
                 return true;
             } catch (e) {
                 console.error('Impossible de charger le picross legacy', e);
@@ -274,14 +251,7 @@ export default {
         },
         // Recalcule les indices (lignes et colonnes) à partir d'une grille de solution
         computeHints(grid) {
-            const rows = grid.map(row => this.getHints(row));
-            const columns = [];
-            const columnCount = grid.length > 0 ? grid[0].length : 0;
-            for(let columnIndex = 0; columnIndex < columnCount; columnIndex++) {
-                const columnCells = grid.map(row => row[columnIndex]);
-                columns.push(this.getHints(columnCells));
-            }
-            return { rows, columns };
+            return buildHints(grid, this.colors.length);
         },
         // Generate the grid array with the correct number of rows and columns
         generateGrid() {
@@ -378,12 +348,9 @@ export default {
                     this.errors[type][arrayIndex] = false;
 
 
-                    for(const color in this.hints[type][arrayIndex]) {
+                    for (const color in this.hints[type][arrayIndex]) {
                         const actualGridElement = type === 'rows' ? this.grid[arrayIndex] : this.getColumnCells(arrayIndex);
-                        const actualColors = this.getHintsForColor(color, actualGridElement);
-
-                        // Debug log
-                        // console.log(type + " " + arrayIndex + " color" + color + " actual : " + actualColors.number + " expected : " + this.hints[type][arrayIndex][color].number);
+                        const actualColors = getHintsForColor(Number(color), actualGridElement);
 
                         // Determine if the number must be displayed (we hide the hints if the colors are placed in a pattern that matchs the hints)
                         if(
@@ -411,43 +378,13 @@ export default {
             return this.grid.map(row => row[columnIndex]);
         },
         getHints(cells) {
-            const cellHints = [];
-            for (const color in this.colors) {
-                cellHints.push(this.getHintsForColor(color, cells));
-            }
-            return cellHints;
-        },
-        getHintsForColor(color, cells) {
-
-            const colorHints = {
-                number: 0,
-                contiguous: true
-            };
-            
-            let lastIndex = null;
-
-            for (const cellIndex in cells) {
-                if (cells[cellIndex] == color) {
-                    colorHints.number++;
-
-                    // Check if the cell is contiguous
-                    if (lastIndex !== null) {
-                        if (cellIndex - lastIndex !== 1) {
-                            colorHints.contiguous = false;
-                        }
-                    }
-
-                    lastIndex = cellIndex;
-                }
-            }
-
-            return colorHints;
+            return buildLineHints(cells, this.colors.length);
         },
         updateColors(colorIndex, newColor) {
             this.colors[colorIndex] = newColor;
         },
         updateCurrentColor(color) {
-            if(color =='' || (color >= 0 && color < this.colors.length)) {
+            if (color === '' || (color >= 0 && color < this.colors.length)) {
                 this.currentColor = color;
             }
         },
@@ -464,10 +401,11 @@ export default {
         },
         //Remove the provided color from the grid
         removeColorFromGrid(color) {
-            for (const rowIndex in this.grid) {
-                for (const colIndex in this.grid[rowIndex]) {
-                    if (this.grid[rowIndex][colIndex] == color) {
-                        this.grid[rowIndex][colIndex] = "";
+            const target = Number(color);
+            for (let rowIndex = 0; rowIndex < this.grid.length; rowIndex++) {
+                for (let colIndex = 0; colIndex < this.grid[rowIndex].length; colIndex++) {
+                    if (Number(this.grid[rowIndex][colIndex]) === target && this.grid[rowIndex][colIndex] !== '') {
+                        this.grid[rowIndex][colIndex] = '';
                     }
                 }
             }
@@ -494,23 +432,12 @@ export default {
             }
         },
         getShareLink() {
-
-            // Format compact : on ne transporte que le strict nécessaire.
-            // - g : grille aplatie en une chaîne (1 caractère base36 par cellule)
-            // - w : largeur (la hauteur se déduit de la longueur de g)
-            // - c : couleurs sans le « # » (ré-ajouté au chargement)
-            // Les indices (hints) et le nombre de lignes ne sont PAS embarqués :
-            // ils sont recalculés/déduits côté lecture, ce qui raccourcit l'URL.
-            const data = {
-                g: this.grid.map(row => row.map(value => Number(value).toString(36)).join('')).join(''),
-                w: this.gridColumns,
-                c: this.colors.map(color => color.replace('#', ''))
-            };
-
-            // JSONCrush compresse fortement la chaîne JSON
-            const encodedData = encodeURIComponent(JSONCrush.crush(JSON.stringify(data)));
-            return `${window.location.origin}?p=${encodedData}`;
-
+            return encodeCompactPuzzle({
+                grid: this.grid,
+                gridColumns: this.gridColumns,
+                colors: this.colors,
+                origin: window.location.origin,
+            });
         },
         updateShareLink() {
             this.shareLink = this.getShareLink();

@@ -2,31 +2,46 @@
     <div class="board-wrapper">
         <div class="boardgame">
             <div class="head">
-                <!-- <div class="hints"> -->
-                    <div class="cell faux-cell" ><Hints class="col-hints" type='col' :hint="hints.columns[0]"></Hints></div>
-                    <Hints @updateFauxCell="updateFauxCell" type="row" v-for="(hint, hintIndex) in hints.rows" :key="hintIndex"  class="row-hints" :hint="hint" :error="errors.rows[hintIndex]"></Hints>
-                <!-- </div> -->
+                    <div class="cell faux-cell" :style="fauxCellStyles">
+                        <Hints class="col-hints" type="col" :hint="hints.columns[0]"></Hints>
+                    </div>
+                    <Hints
+                        @updateFauxCell="updateFauxCell"
+                        type="row"
+                        v-for="(hint, hintIndex) in hints.rows"
+                        :key="hintIndex"
+                        class="row-hints"
+                        :hint="hint"
+                        :error="errors.rows[hintIndex]"
+                    ></Hints>
             </div>
             <div class="main">
 
-                <div class="hints"  :style="headStyles"> 
-                    <Hints type="col" class="col-hints"  v-for="(hint, hintIndex) in hints.columns" :hint="hint" :error="errors.columns[hintIndex]" :key="hintIndex"></Hints>
+                <div class="hints" :style="headStyles">
+                    <Hints
+                        type="col"
+                        class="col-hints"
+                        v-for="(hint, hintIndex) in hints.columns"
+                        :hint="hint"
+                        :error="errors.columns[hintIndex]"
+                        :key="hintIndex"
+                    ></Hints>
                 </div>
-                <div class="grid"  @mouseleave="this.release" @touchmove="this.debouncedMobileDrag" :style="gridStyles">
+                <div class="grid" @mouseleave="release" @touchmove="debouncedMobileDrag" :style="gridStyles">
 
-                    <template v-for="(row, rowIndex) in this.grid" :key="rowIndex">
-                        <Cell 
+                    <template v-for="(row, rowIndex) in grid" :key="rowIndex">
+                        <Cell
                         :ref="'cell-' + rowIndex + columnIndex"
                         v-for="(column, columnIndex) in row"
-                        @updateCell="updateGrid"  
+                        @updateCell="updateGrid"
                         @press="press"
                         @release="release"
-                        :rowIndex="rowIndex" 
-                        :columnIndex="columnIndex" 
+                        :rowIndex="rowIndex"
+                        :columnIndex="columnIndex"
                         :totalRows="gridRows"
                         :totalColumns="gridColumns"
                         :pressed="pressed"
-                        :color="this.grid[rowIndex][columnIndex]" 
+                        :color="grid[rowIndex][columnIndex]"
                         :key="columnIndex"></Cell>
                     </template>
             </div>
@@ -63,10 +78,11 @@ export default {
                 flex: this.gridColumns,
             }
         },
+        // Largeur mesurée sur les indices de ligne — aligne le coin supérieur gauche.
         fauxCellStyles() {
-            return {
-                width: this.fauxCellWidth + 'px',
-            }
+            return this.fauxCellWidth
+                ? { width: this.fauxCellWidth + 'px', minWidth: this.fauxCellWidth + 'px' }
+                : {};
         },
         headStyles() {
             return {

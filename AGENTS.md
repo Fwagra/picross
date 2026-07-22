@@ -17,7 +17,7 @@ Préférer **yarn** (`yarn.lock` ; ignorer `package-lock.json`). Stack : Vue 3 +
 ## Architecture et portée des diffs
 
 - Entrée : `main.js` → `App.vue` → **`Game.vue`** (état + `provide`/`inject` + watchers).
-- UI : `Grid` / `Cell` / `Hints` / `Tools` / `Modal` ; logique pure : `src/solver.js` ; styles globaux : `src/assets/style.css`.
+- UI : `Grid` / `Cell` / `Hints` / `Tools` / `Modal` ; logique pure : `src/solver.js`, `src/hints.js`, `src/puzzleUrl.js` ; styles globaux : `src/assets/style.css`.
 - **Portée** : diff local dans le composant concerné ; ne toucher `Game.vue` que pour l’état partagé ; ne pas ajouter de store ni migrer Vite sans demande.
 
 ## Domaine (critique)
