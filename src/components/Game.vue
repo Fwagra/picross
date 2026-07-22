@@ -93,14 +93,16 @@ export default {
         },
     },
     provide() {
+        // computed() : provide() n'est pas réactif pour les valeurs brutes ;
+        // unwrapInjectedRef (main.js) déroule les refs à l'inject.
         return {
-            editMode: this.editMode,
-            gridColumns: this.gridColumns,
-            gridRows: this.gridRows,
+            editMode: computed(() => this.editMode),
+            gridColumns: computed(() => this.gridColumns),
+            gridRows: computed(() => this.gridRows),
             grid: computed(() => this.grid),
             colors: computed(() => this.colors),
             currentColor: computed(() => this.currentColor),
-            hints: this.hints,
+            hints: computed(() => this.hints),
             updateGrid: this.updateGrid,
             updateColors: this.updateColors,
             updateCurrentColor: this.updateCurrentColor,
@@ -262,23 +264,21 @@ export default {
                 }
             }
         },
-         updateGrid(rowIndex, columnIndex) {
+        updateGrid(rowIndex, columnIndex) {
             const oldValue = this.grid[rowIndex][columnIndex];
-            // Update the grid array with the new color
             this.grid[rowIndex][columnIndex] = this.currentColor;
 
-            // Update the history
+            // Une action = une entrée (même format que le fill groupé)
             this.history.push({
-                rowIndex: rowIndex,
-                columnIndex: columnIndex,
-                color: this.currentColor,
-                oldValue: oldValue,
+                cells: [{ rowIndex, columnIndex, oldValue }],
             });
         },
         moveBackFromHistory() {
-            if(this.history.length > 0 && this.victory === false) {
+            if (this.history.length > 0 && this.victory === false) {
                 const lastMove = this.history.pop();
-                this.grid[lastMove.rowIndex][lastMove.columnIndex] = lastMove.oldValue;
+                for (const cell of lastMove.cells) {
+                    this.grid[cell.rowIndex][cell.columnIndex] = cell.oldValue;
+                }
             }
         },
         // Get the differences between the old and new grid
@@ -423,12 +423,22 @@ export default {
             }
         },
         fillColor() {
-            for (const rowIndex in this.grid) {
-                for (const colIndex in this.grid[rowIndex]) {
-                    if(this.grid[rowIndex][colIndex] === "") {
+            const cells = [];
+            for (let rowIndex = 0; rowIndex < this.grid.length; rowIndex++) {
+                for (let colIndex = 0; colIndex < this.grid[rowIndex].length; colIndex++) {
+                    if (this.grid[rowIndex][colIndex] === '') {
+                        cells.push({
+                            rowIndex,
+                            columnIndex: colIndex,
+                            oldValue: '',
+                        });
                         this.grid[rowIndex][colIndex] = this.currentColor;
                     }
                 }
+            }
+            // Un seul undo pour tout le seau
+            if (cells.length > 0) {
+                this.history.push({ cells });
             }
         },
         getShareLink() {

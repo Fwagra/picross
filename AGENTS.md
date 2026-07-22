@@ -56,5 +56,5 @@ Puzzle calme : police **Dongle**, fond via `--background` (cycle `#e9e9e9` → `
 ## Pièges
 
 - Watchers via `stringifiedGrid` / `stringifiedColors` (comparaison par valeur).
-- `provide()` parfois non réactif (`editMode`, `hints`) — ne pas « moderniser » à l’aveugle.
+- Les valeurs `provide`d doivent passer par `computed(() => …)` (déjà le cas) + `unwrapInjectedRef` dans `main.js`.
 - Indice satisfait masqué (`visibility: hidden`) ; erreur = trop de cases ou mismatch contiguïté.
