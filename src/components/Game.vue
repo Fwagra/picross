@@ -84,8 +84,11 @@ export default {
         solvabilityLoading() {
             return this.solvability_loading;
         },
+        // `!== true` : les cases non encore évaluées restent `undefined` (tableau sparse)
+        // et ne doivent pas bloquer la détection de victoire.
         noErrors() {
-            return this.errors.rows.every(error => error === false) && this.errors.columns.every(error => error === false);
+            return this.errors.rows.every(error => error !== true)
+                && this.errors.columns.every(error => error !== true);
         },
     },
     provide() {

@@ -52,6 +52,7 @@ export default {
         return {
             fauxCellWidth: 0,
             pressed: false,
+            lastMobileDragTime: 0,
         }
     },
     computed: {
@@ -85,22 +86,16 @@ export default {
         release() {
             this.pressed = false;
         },
-        debounce(func, timeFrame) {
-            var lastTime = 0;
-            return function (...args) {
-                var now = new Date();
-                if (now - lastTime >= timeFrame) {
-                    func(...args);
-                    lastTime = now;
-                }
-            };
-        },
+        // Throttle tactile : l'ancien « debounce » recréait une fermeture à chaque
+        // touchmove, donc le délai n'était jamais respecté.
         debouncedMobileDrag(e) {
-            if(!this.victory) {
-                this.debounce(this.mobileDrag, 200)(e);
-            }
+            if (this.victory) return;
+            const now = Date.now();
+            if (now - this.lastMobileDragTime < 200) return;
+            this.lastMobileDragTime = now;
+            this.mobileDrag(e);
         },
-        
+
         mobileDrag(e) {
             let position = e.touches[0];
             let el = document.elementFromPoint(position.clientX, position.clientY);

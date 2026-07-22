@@ -1,0 +1,57 @@
+# AGENTS.md — Color Picross
+
+## Projet
+
+SPA **Color Picross** (client-only) : créer une grille colorée, partager un lien jouable, vérifier l’unicité de solution.
+
+UI / messages / commentaires utiles en **français** (tutoiement).
+
+## Commandes
+
+```text
+yarn install | yarn serve | yarn build | yarn lint
+```
+
+Préférer **yarn** (`yarn.lock` ; ignorer `package-lock.json`). Stack : Vue 3 + Vue CLI 4, Options API, pas de TS / Pinia / tests.
+
+## Architecture et portée des diffs
+
+- Entrée : `main.js` → `App.vue` → **`Game.vue`** (état + `provide`/`inject` + watchers).
+- UI : `Grid` / `Cell` / `Hints` / `Tools` / `Modal` ; logique pure : `src/solver.js` ; styles globaux : `src/assets/style.css`.
+- **Portée** : diff local dans le composant concerné ; ne toucher `Game.vue` que pour l’état partagé ; ne pas ajouter de store ni migrer Vite sans demande.
+
+## Domaine (critique)
+
+Ce n’est **pas** un picross classique (suites de blocs).
+
+- Cellule : index couleur `0..n-1` ou `""` (gomme).
+- Indice par ligne/colonne **et par couleur** : `{ number, contiguous }` (`contiguous` = toutes adjacentes ; pastille dans l’UI).
+- Couleurs **2–5** ; dimensions **3–15** (aligner UI et logique sur 15 — l’écart actuel `max=15` vs code `<=20` est un bug à corriger si on y touche, sinon ne pas élargir à 20).
+- Modes : édition (pas de query) | jeu (`?p=` ou legacy `?g=`) | hypothèse (backup grille).
+
+## Partage URL (ne pas casser)
+
+- `?p=` compact : `{ g, w, c }` (grille base36, largeur, couleurs sans `#`) ; hints recalculés à la lecture.
+- `?g=` legacy : conserver pour rétrocompatibilité.
+
+## Solveur
+
+- `checkSolvability({ rows, columns, hints, colorCount })` → `reason` : `unique` | `no_solution` | `multiple` | `too_complex` | `invalid_hints`.
+- Budget 5s / cap arrangements 2e6 ; snake_case + commentaires FR dans ce fichier.
+- **Ne pas réécrire l’algo** sans besoin ; étendre plutôt feedback UI ou raisons exposées. Appel édition seulement, debounce 300 ms, grille pleine.
+
+## UI
+
+Puzzle calme : police **Dongle**, fond via `--background` (cycle `#e9e9e9` → `#848282` → `#1f1f1f`), texte/traits `--grid-dark` / `--grid-separations`, CTA `#5670c5`. Grille = ancre (tirets 2px, traits forts tous les **5**) ; breakpoint unique **1100px** ; outils = cercles + icônes CSS `gg-*` + Tippy. Réutiliser transitions existantes ; détail dans `style.css` / composants.
+
+## Conventions
+
+- Options API, props/emits + inject depuis `Game`.
+- CamelCase côté Vue ; snake_case dans `solver.js`.
+- Touch/drag (`Cell`/`Grid`) : modifier avec prudence (mobile).
+
+## Pièges
+
+- Watchers via `stringifiedGrid` / `stringifiedColors` (comparaison par valeur).
+- `provide()` parfois non réactif (`editMode`, `hints`) — ne pas « moderniser » à l’aveugle.
+- Indice satisfait masqué (`visibility: hidden`) ; erreur = trop de cases ou mismatch contiguïté.
