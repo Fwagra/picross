@@ -13,6 +13,7 @@
                         class="row-hints"
                         :hint="hint"
                         :error="errors.rows[hintIndex]"
+                        :highlight="hintIndex === hoveredRow"
                     ></Hints>
             </div>
             <div class="main">
@@ -24,10 +25,11 @@
                         v-for="(hint, hintIndex) in hints.columns"
                         :hint="hint"
                         :error="errors.columns[hintIndex]"
+                        :highlight="hintIndex === hoveredColumn"
                         :key="hintIndex"
                     ></Hints>
                 </div>
-                <div class="grid" @mouseleave="release" @touchmove="debouncedMobileDrag" :style="gridStyles">
+                <div class="grid" @mouseleave="onGridLeave" @touchmove="debouncedMobileDrag" :style="gridStyles">
 
                     <template v-for="(row, rowIndex) in grid" :key="rowIndex">
                         <Cell
@@ -36,6 +38,7 @@
                         @updateCell="updateGrid"
                         @press="press"
                         @release="release"
+                        @hover="hover"
                         :rowIndex="rowIndex"
                         :columnIndex="columnIndex"
                         :totalRows="gridRows"
@@ -68,6 +71,9 @@ export default {
             fauxCellWidth: 0,
             pressed: false,
             lastMobileDragTime: 0,
+            // Cellule survolée : sert à surligner sa ligne/colonne pour la lecture.
+            hoveredRow: null,
+            hoveredColumn: null,
         }
     },
     computed: {
@@ -101,6 +107,17 @@ export default {
         },
         release() {
             this.pressed = false;
+        },
+        // Mémorise la cellule survolée pour surligner sa ligne et sa colonne.
+        hover(rowIndex, columnIndex) {
+            this.hoveredRow = rowIndex;
+            this.hoveredColumn = columnIndex;
+        },
+        // Quitte la grille : relâche le tracé et coupe le surlignage.
+        onGridLeave() {
+            this.release();
+            this.hoveredRow = null;
+            this.hoveredColumn = null;
         },
         // Throttle tactile : l'ancien « debounce » recréait une fermeture à chaque
         // touchmove, donc le délai n'était jamais respecté.

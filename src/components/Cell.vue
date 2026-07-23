@@ -1,5 +1,5 @@
 <template>
-    <div  :class="cellClasses" class="cell grid-cell" v-touch:tap="this.updateCell" v-touch:press="this.press"   v-touch:release="this.release" @mouseover="this.drag" :style="style"></div>
+    <div  :class="cellClasses" class="cell grid-cell" v-touch:tap="this.updateCell" v-touch:press="this.press"   v-touch:release="this.release" @mouseover="this.onMouseover" :style="style"></div>
 </template>
 
 <script>
@@ -21,6 +21,11 @@ export default {
     },
 
     methods: {
+        // Signale le survol (surlignage des indices) puis gère le tracé au drag.
+        onMouseover() {
+            this.$emit('hover', this.rowIndex, this.columnIndex);
+            this.drag();
+        },
         drag() {
             if((this.pressed && this.color === '') || (this.pressed &&  this.currentColor === '')) {
                 this.$emit('update-cell', this.rowIndex, this.columnIndex)
