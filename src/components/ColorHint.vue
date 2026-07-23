@@ -23,9 +23,10 @@ export default {
 </script>
 <style scoped>
 .contiguous {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--hint-pill-bg);
     border-radius: 50%;
-    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.4);
+    text-shadow: 1px 1px 0px var(--hint-pill-shadow);
+    transition: background-color .3s;
 }
 span {
     --font-size: 1.7rem;

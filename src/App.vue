@@ -64,7 +64,9 @@ h1 {
 }
 .daily-badge {
   background: var(--grid-dark);
-  color: #c8c8c8;
+  /* Texte à l'opposé du fond du badge (--grid-dark) : reste lisible sur tous les thèmes. */
+  color: var(--background);
+  transition: background-color .3s, color .3s;
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: 0.06em;

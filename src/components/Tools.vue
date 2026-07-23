@@ -154,11 +154,9 @@ export default {
         return {
             share: false,
             rules: false,
-            backgrounds: [
-                '#e9e9e9',
-                '#848282',
-                '#1f1f1f',
-            ],
+            // Thèmes de fond : chaque clé pilote une palette complète (fond, texte,
+            // traits, pastilles) définie dans style.css via [data-theme].
+            themes: ['light', 'mid', 'dim', 'dark'],
             currentBackground: 0,
         }
     },
@@ -168,10 +166,8 @@ export default {
             this.share = true;
         },
         changeBackground() {
-            this.currentBackground = (this.currentBackground + 1) % this.backgrounds.length;
-            const root = document.documentElement;
-
-            root.style.setProperty('--background', this.backgrounds[this.currentBackground]);
+            this.currentBackground = (this.currentBackground + 1) % this.themes.length;
+            document.documentElement.dataset.theme = this.themes[this.currentBackground];
         },
         // Keyboard shortcuts
         // Couleurs : e.code (Digit1–5) pour rester correct en AZERTY

@@ -7,6 +7,33 @@
     --grid-dark: #585656;
     --background: #e9e9e9;
     --ggs: 1;
+    /* Pastille des indices contigus : s'adapte au fond via les thèmes. */
+    --hint-pill-bg: rgba(0, 0, 0, 0.1);
+    --hint-pill-shadow: rgba(0, 0, 0, 0.4);
+}
+
+/* Thèmes de fond : chaque palette ajuste texte, traits et pastilles pour
+   garder une bonne lisibilité quel que soit le fond. */
+:root[data-theme="mid"] {
+    --background: #848282;
+    --grid-separations: #4f4e4e;
+    --grid-dark: #2c2b2b;
+    --hint-pill-bg: rgba(0, 0, 0, 0.14);
+    --hint-pill-shadow: rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="dim"] {
+    --background: #4a4a4a;
+    --grid-separations: #7a7a7a;
+    --grid-dark: #d8d8d8;
+    --hint-pill-bg: rgba(255, 255, 255, 0.14);
+    --hint-pill-shadow: rgba(0, 0, 0, 0.55);
+}
+:root[data-theme="dark"] {
+    --background: #1f1f1f;
+    --grid-separations: #6a6a6a;
+    --grid-dark: #dcdcdc;
+    --hint-pill-bg: rgba(255, 255, 255, 0.16);
+    --hint-pill-shadow: rgba(0, 0, 0, 0.6);
 }
 
 body {
@@ -14,7 +41,7 @@ body {
     font-family: 'Dongle', sans-serif;
     background-color: var(--background);
     color: var(--grid-dark);
-    transition: background-color .3s;
+    transition: background-color .3s, color .3s;
     overscroll-behavior: contain;
 }
 
