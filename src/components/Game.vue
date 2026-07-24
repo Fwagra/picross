@@ -26,599 +26,206 @@
     <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = false"  :type="'message'" v-if="openModal"></Modal>
 </template>
 
-<script>
-
+<script setup>
+// Game.vue est l'orchestrateur : il assemble les composables de domaine
+// (couleurs, grille, indices, solvabilité, hypothèse, daily, source URL),
+// détient l'état d'UI transverse (mode, victoire, modale) et coordonne les
+// watchers qui relient la grille aux indices, à la victoire et à la solvabilité.
+import { ref, computed, provide, watch, onMounted } from 'vue';
 import Grid from './Grid.vue';
 import Tools from './Tools.vue';
 import Modal from './Modal.vue';
-import { computed } from 'vue';
-import { checkSolvability } from '../solver.js';
-import { computeHints as buildHints, getHints as buildLineHints, getHintsForColor } from '../hints.js';
-import { decodeCompactPuzzle, decodeLegacyPuzzle, encodeCompactPuzzle } from '../puzzleUrl.js';
-import { getAvailableDailyDateKeys, getTodayKey, isDailyPath, loadDailyForDate } from '../daily.js';
+import { useColors } from '../composables/useColors.js';
+import { useGrid } from '../composables/useGrid.js';
+import { useHints } from '../composables/useHints.js';
+import { useSolvability } from '../composables/useSolvability.js';
+import { useHypothesis } from '../composables/useHypothesis.js';
+import { useDaily } from '../composables/useDaily.js';
+import { usePuzzleSource } from '../composables/usePuzzleSource.js';
 
-export default {
-    components: {
-        Grid,
-        Tools,
-        Modal
-    },
-    emits: ['daily-state'],
-    data() {
-        return {
-            editMode: true,
-            dailyMode: false,
-            dailyDateKey: null,
-            dailyDateKeys: [],
-            hypothesisMode: false,
-            gridColumns: 5,
-            gridRows: 5,
-            grid: [],
-            correctGrid: [],
-            hints: {
-                rows: [],
-                columns: [],
-            },
-            errors: {
-                rows: [],
-                columns: [],
-            },
-            history: [],
-            colors: [],
-            currentColor: 0,
-            shareLink: '',
-            victory: false,
-            modalTitle: '',
-            modalMessage: '',
-            openModal: false,
-            gridBackup: [],
-            solvability: null,
-            solvability_loading: false,
-            solvability_debounce: null,
-        }
-    },
-    computed: {
-        stringifiedGrid() {
-            return JSON.stringify(this.grid);
-        },
-        stringifiedColors() {
-            return JSON.stringify(this.colors);
-        },
-        isFilled() {
-            return this.grid.every(row => row.every(cell => cell !== ''));
-        },
-        solvabilityLoading() {
-            return this.solvability_loading;
-        },
-        // `!== true` : les cases non encore évaluées restent `undefined` (tableau sparse)
-        // et ne doivent pas bloquer la détection de victoire.
-        noErrors() {
-            return this.errors.rows.every(error => error !== true)
-                && this.errors.columns.every(error => error !== true);
-        },
-        // Position de la date courante dans la liste des daily jouables.
-        dailyIndex() {
-            return this.dailyDateKeys.indexOf(this.dailyDateKey);
-        },
-        // Existe-t-il une grille daily plus ancienne (flèche gauche) ?
-        canGoPreviousDaily() {
-            return this.dailyMode && this.dailyIndex > 0;
-        },
-        // Existe-t-il une grille daily plus récente (flèche droite) ?
-        canGoNextDaily() {
-            return this.dailyMode && this.dailyIndex !== -1 && this.dailyIndex < this.dailyDateKeys.length - 1;
-        },
-    },
-    provide() {
-        // computed() : provide() n'est pas réactif pour les valeurs brutes ;
-        // unwrapInjectedRef (main.js) déroule les refs à l'inject.
-        return {
-            editMode: computed(() => this.editMode),
-            gridColumns: computed(() => this.gridColumns),
-            gridRows: computed(() => this.gridRows),
-            grid: computed(() => this.grid),
-            colors: computed(() => this.colors),
-            currentColor: computed(() => this.currentColor),
-            hints: computed(() => this.hints),
-            updateGrid: this.updateGrid,
-            updateColors: this.updateColors,
-            updateCurrentColor: this.updateCurrentColor,
-        }
-    },
-    mounted() {
-        // Check if we are playing or editing
-        this.checkMode();
-        // Generate the grid array with the correct number of rows and columns
-        this.generateGrid();
-        this.emitDailyState();
-    },
-    watch: {
-        // When the grid is updated, update the grid hints
-        // Watch the stringified computed property so that we can compare the old and new grid (using the original data (array), newGrid and oldGrid are the identical since objects are passed by reference)
-        stringifiedGrid: {
-            handler(stringNewGrid, stringOldGrid) {
-                const newGrid = JSON.parse(stringNewGrid);
-                const oldGrid = JSON.parse(stringOldGrid);
-                // Retrieve the rows and columns that have changed
-                const gridDiffs = this.getGridDifferences(newGrid, oldGrid);
-                
-                // Update the hints for these rows and columns
-                this.updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
+const emit = defineEmits(['daily-state']);
 
-                if (!this.editMode && !this.hypothesisMode && this.isFilled && this.noErrors) {
-                    this.checkVictory();
-                }
+// --- État d'UI transverse ---
+// `editMode` est partagé par presque tous les domaines : on le détient ici.
+const editMode = ref(true);
+const victory = ref(false);
+const modalTitle = ref('');
+const modalMessage = ref('');
+const openModal = ref(false);
 
-                if (this.editMode) {
-                    this.scheduleSolvabilityCheck();
-                }
-            },
-            deep: true
-        },
-        stringifiedColors() {
-            //Update the hints when the colors are updated
-           this.refreshHints();  
-        },
-        gridRows(newRows, oldRows) {
-            if(this.editMode) {
-                const difference = newRows - oldRows;
+// --- Composables de domaine ---
+const { colors, currentColor, updateColors, updateCurrentColor, addColor, seedInitialColors } = useColors();
 
-                if(difference > 0) {
-                    for(let i = 0; i < difference; i++) {
-                        this.grid.push([...Array(this.gridColumns).fill('')]);
-                    }
-                } else if(difference < 0) {
-                    for(let i = 0; i < Math.abs(difference); i++) {
-                        this.grid.pop();
-                    }
-                }
-                // if the grid's size has changed, force the update of the hints
-                this.refreshHints();
-            }
-        },
-        gridColumns(newColumns, oldColumns) {
-            if(this.editMode) {
+const {
+    grid, correctGrid, gridColumns, gridRows, history, isFilled,
+    generateGrid, updateGrid, moveBackFromHistory: undoLastMove, getGridDifferences,
+    getColumnCells, fillColor, removeColorFromGrid, updateRows, updateCols,
+    resizeGridRows, resizeGridColumns,
+} = useGrid({ currentColor });
 
-                const difference = newColumns - oldColumns;
-                if(difference > 0) {
-                    for(let i = 0; i < this.grid.length; i++) {
-                        this.grid[i] = [...this.grid[i], ...Array(difference).fill('')];
-                    }
-                } else if(difference < 0) {
-                    for(let i = 0; i < this.grid.length; i++) {
-                        this.grid[i].splice(difference);
-                    }
-                }
-                // if the grid's size has changed, force the update of the hints
-                this.refreshHints();
-            }
-        },
+const { hints, errors, noErrors, updateHints, refreshHints } = useHints({
+    grid, gridRows, gridColumns, colors, editMode, getColumnCells,
+});
 
-    },
-    methods: {
-        checkMode() {
-            const params = new URLSearchParams(document.location.search);
+const { solvability, solvabilityLoading, scheduleSolvabilityCheck } = useSolvability({
+    editMode, isFilled, gridRows, gridColumns, hints, colors,
+});
 
-            // Nouveau format compact : ?p=  (voir loadCompactPuzzle)
-            if (params.has('p')) {
-                if (this.loadCompactPuzzle()) {
-                    this.editMode = false;
-                } else {
-                    this.fallbackToEditMode();
-                }
-            // Ancien format historique : ?g=  (conservé pour la rétro-compatibilité)
-            } else if (params.has('g')) {
-                if (this.loadLegacyPuzzle()) {
-                    this.editMode = false;
-                } else {
-                    this.fallbackToEditMode();
-                }
-            } else if (isDailyPath()) {
-                if (this.loadDailyPuzzle()) {
-                    this.editMode = false;
-                    this.dailyMode = true;
-                } else {
-                    this.fallbackToEditMode('Aucun daily n\'est disponible pour aujourd\'hui. Tu peux créer une nouvelle grille.');
-                }
-            } else {
-                this.editMode = true;
-                this.colors.push(this.getRandomColor());
-                this.colors.push(this.getRandomColor());
-            }
-        },
-        emitDailyState() {
-            this.$emit('daily-state', {
-                dailyMode: this.dailyMode,
-                dailyDateKey: this.dailyDateKey,
-                canGoPreviousDaily: this.canGoPreviousDaily,
-                canGoNextDaily: this.canGoNextDaily,
-            });
-        },
-        // Retire ?p= / ?g= pour qu'un refresh ne relance pas le mode jeu.
-        clearPuzzleQuery() {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('p');
-            url.searchParams.delete('g');
-            const search = url.searchParams.toString();
-            const path = isDailyPath(url.pathname) ? '/' : url.pathname;
-            window.history.replaceState({}, '', path + (search ? `?${search}` : '') + url.hash);
-        },
-        fallbackToEditMode(message = 'Ce lien de picross est invalide ou corrompu. Tu peux créer une nouvelle grille.') {
-            this.editMode = true;
-            this.dailyMode = false;
-            this.dailyDateKey = null;
-            this.clearPuzzleQuery();
-            this.emitDailyState();
-            if (this.colors.length === 0) {
-                this.colors.push(this.getRandomColor());
-                this.colors.push(this.getRandomColor());
-            }
-            this.modalTitle = 'Oups !';
-            this.modalMessage = message;
-            this.openModal = true;
-        },
-        applyPuzzle(puzzle) {
-            this.colors = puzzle.colors;
-            this.correctGrid = puzzle.grid;
-            this.gridRows = puzzle.gridRows;
-            this.gridColumns = puzzle.gridColumns;
-            this.hints = puzzle.hints;
-        },
-        // Décode le format compact (?p=). Retourne true si le chargement a réussi.
-        loadCompactPuzzle() {
-            try {
-                this.applyPuzzle(decodeCompactPuzzle(document.location.href));
-                return true;
-            } catch (e) {
-                console.error('Impossible de charger le picross compact', e);
-                return false;
-            }
-        },
-        // Décode l'ancien format (?g=). Retourne true si le chargement a réussi.
-        loadLegacyPuzzle() {
-            try {
-                this.applyPuzzle(decodeLegacyPuzzle(document.location.href));
-                return true;
-            } catch (e) {
-                console.error('Impossible de charger le picross legacy', e);
-                return false;
-            }
-        },
-        // Charge le daily du jour depuis le calendrier embarqué.
-        loadDailyPuzzle() {
-            this.dailyDateKeys = getAvailableDailyDateKeys();
-            return this.loadDailyForKey(getTodayKey());
-        },
-        // Charge (sans réinitialiser) la grille daily d'une date donnée.
-        // La date affichée est la date réelle de la grille (resolvedDateKey).
-        loadDailyForKey(dateKey) {
-            try {
-                const puzzle = loadDailyForDate(dateKey);
-                this.applyPuzzle(puzzle);
-                this.dailyDateKey = puzzle.resolvedDateKey;
-                return true;
-            } catch (e) {
-                console.error('Impossible de charger le daily', e);
-                return false;
-            }
-        },
-        // Navigue vers une autre date daily : recharge la grille et remet à zéro la partie.
-        navigateDaily(dateKey) {
-            if (!this.loadDailyForKey(dateKey)) {
-                return;
-            }
-            this.resetPlayState();
-            this.emitDailyState();
-        },
-        // Flèche gauche : grille daily précédente (plus ancienne).
-        goToPreviousDaily() {
-            if (this.canGoPreviousDaily) {
-                this.navigateDaily(this.dailyDateKeys[this.dailyIndex - 1]);
-            }
-        },
-        // Flèche droite : grille daily suivante (plus récente).
-        goToNextDaily() {
-            if (this.canGoNextDaily) {
-                this.navigateDaily(this.dailyDateKeys[this.dailyIndex + 1]);
-            }
-        },
-        // Remet la partie à zéro pour la nouvelle grille daily chargée.
-        resetPlayState() {
-            this.victory = false;
-            this.openModal = false;
-            this.history = [];
-            this.hypothesisMode = false;
-            this.gridBackup = [];
-            this.errors = { rows: [], columns: [] };
-            this.currentColor = 0;
-            this.grid = [];
-            this.generateGrid();
-        },
-        // Recalcule les indices (lignes et colonnes) à partir d'une grille de solution
-        computeHints(grid) {
-            return buildHints(grid, this.colors.length);
-        },
-        // Generate the grid array with the correct number of rows and columns
-        generateGrid() {
-            for (let i = 0; i < this.gridRows; i++) {
-                this.grid[i] = [];
-                for (let j = 0; j < this.gridColumns; j++) {
-                    this.grid[i][j] = "";
-                }
-            }
-        },
-        updateGrid(rowIndex, columnIndex) {
-            const oldValue = this.grid[rowIndex][columnIndex];
-            this.grid[rowIndex][columnIndex] = this.currentColor;
+const { hypothesisMode, gridBackup, enableHypothesisMode, disableHypothesisMode, validateHypothesis } = useHypothesis({
+    grid, history,
+});
 
-            // Une action = une entrée (même format que le fill groupé)
-            this.history.push({
-                cells: [{ rowIndex, columnIndex, oldValue }],
-            });
-        },
-        moveBackFromHistory() {
-            if (this.history.length > 0 && this.victory === false) {
-                const lastMove = this.history.pop();
-                for (const cell of lastMove.cells) {
-                    this.grid[cell.rowIndex][cell.columnIndex] = cell.oldValue;
-                }
-            }
-        },
-        // Get the differences between the old and new grid
-        getGridDifferences(newGrid, oldGrid) {
-            let rowsToUpdate = [];
-            let columnsToUpdate = [];
-            for (let rowIndex = 0; rowIndex < newGrid.length; rowIndex++) {
-                for (let colIndex = 0; colIndex < newGrid[rowIndex].length; colIndex++) {
-                    if (oldGrid.length === 0 || oldGrid[rowIndex] === undefined || newGrid[rowIndex][colIndex] !== oldGrid[rowIndex][colIndex]) {
+// --- Fonctions transverses (orchestration) ---
+// Applique un puzzle chargé (mode jeu/daily) sur l'ensemble des domaines.
+function applyPuzzle(puzzle) {
+    colors.value = puzzle.colors;
+    correctGrid.value = puzzle.grid;
+    gridRows.value = puzzle.gridRows;
+    gridColumns.value = puzzle.gridColumns;
+    hints.value = puzzle.hints;
+}
 
-                        if(!rowsToUpdate.includes(rowIndex)) {
-                            rowsToUpdate.push(rowIndex);
-                        }
-                        if(!columnsToUpdate.includes(colIndex)) {
-                            columnsToUpdate.push(colIndex);
-                        }
-                    }
-                }
-            }
-            return { rowsToUpdate, columnsToUpdate };
-        },
-        // Update the hints for the provided rows and columns 
-        updateHints(rowsToUpdate, columnsToUpdate) {
-            if(this.editMode) {
+// Remet la partie à zéro (changement de grille daily).
+function resetPlayState() {
+    victory.value = false;
+    openModal.value = false;
+    history.value = [];
+    hypothesisMode.value = false;
+    gridBackup.value = [];
+    errors.value = { rows: [], columns: [] };
+    currentColor.value = 0;
+    grid.value = [];
+    generateGrid();
+}
 
-                if(rowsToUpdate.length !== 0) {
-                    for (const rowIndex  of rowsToUpdate) {
-                        this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
-                    }
-                }
-                if(columnsToUpdate.length !== 0) {
-                    for (const columnIndex of columnsToUpdate) {
-                        this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
-                    }
-                }
-            }else {
-                this.checkHints({rows: rowsToUpdate, columns: columnsToUpdate});
-            }
-        },
-        refreshHints() {
-            if(this.editMode) {
+function emitDailyState() {
+    emit('daily-state', {
+        dailyMode: daily.dailyMode.value,
+        dailyDateKey: daily.dailyDateKey.value,
+        canGoPreviousDaily: daily.canGoPreviousDaily.value,
+        canGoNextDaily: daily.canGoNextDaily.value,
+    });
+}
 
-                for (let rowIndex = 0; rowIndex < this.gridRows; rowIndex++) {
-                    this.hints.rows[rowIndex] = this.getHints(this.grid[rowIndex]);
-                }
-                for (let columnIndex = 0; columnIndex < this.gridColumns; columnIndex++) {
-                    this.hints.columns[columnIndex] = this.getHints(this.getColumnCells(columnIndex));
-                }
+function showModal(title, message) {
+    modalTitle.value = title;
+    modalMessage.value = message;
+    openModal.value = true;
+}
 
-                // Trim the hints from removed rows/columns
-                this.hints.rows = this.hints.rows.slice(0, this.gridRows);
-                this.hints.columns = this.hints.columns.slice(0, this.gridColumns);
+// Retire la dernière couleur (liste + grille) et réajuste le pinceau.
+function removeColor() {
+    const removedColor = colors.value.length - 1;
+    colors.value.pop();
+    removeColorFromGrid(removedColor);
+    updateCurrentColor(colors.value.length - 1);
+}
 
-                this.scheduleSolvabilityCheck();
-            }
+// L'annulation est désactivée après la victoire.
+function moveBackFromHistory() {
+    undoLastMove(victory.value);
+}
 
-        },
-        // Check if the player's moves match the hints
-        checkHints(rowsAndColumns) {
-
-            for (const type in rowsAndColumns) {
-                const arrayToCheck = rowsAndColumns[type];
-
-                if(arrayToCheck.length !== 0) {
-                    for (const arrayIndex  of arrayToCheck) {
-
-                    this.errors[type][arrayIndex] = false;
-
-
-                    for (const color in this.hints[type][arrayIndex]) {
-                        const actualGridElement = type === 'rows' ? this.grid[arrayIndex] : this.getColumnCells(arrayIndex);
-                        const actualColors = getHintsForColor(Number(color), actualGridElement);
-
-                        // Determine if the number must be displayed (we hide the hints if the colors are placed in a pattern that matchs the hints)
-                        if(
-                            actualColors.number === this.hints[type][arrayIndex][color].number &&
-                            actualColors.contiguous === this.hints[type][arrayIndex][color].contiguous
-                        ) {
-                            this.hints[type][arrayIndex][color].correct = true;
-                        } else {
-                            this.hints[type][arrayIndex][color].correct = false;
-                        }
-
-                        // Determine if the line contains an error
-                        if(actualColors.number > this.hints[type][arrayIndex][color].number) {
-                            this.errors[type][arrayIndex] = true;
-                        } else if(actualColors.number === this.hints[type][arrayIndex][color].number && this.hints[type][arrayIndex][color].contiguous !== actualColors.contiguous){
-                            this.errors[type][arrayIndex] = true;
-                        }
-                    }
-                }
-                }
-            }
-        },
-        // Get the cells in the provided column
-        getColumnCells(columnIndex) {
-            return this.grid.map(row => row[columnIndex]);
-        },
-        getHints(cells) {
-            return buildLineHints(cells, this.colors.length);
-        },
-        updateColors(colorIndex, newColor) {
-            this.colors[colorIndex] = newColor;
-        },
-        updateCurrentColor(color) {
-            if (color === '' || (color >= 0 && color < this.colors.length)) {
-                this.currentColor = color;
-            }
-        },
-        addColor() {
-            this.colors.push(this.getRandomColor());
-            this.updateCurrentColor(this.colors.length - 1);
-        },
-        // Remove the last color from colors list
-        removeColor() {
-            const removedColor = this.colors.length - 1;
-            this.colors.pop();
-            this.removeColorFromGrid(removedColor);
-            this.updateCurrentColor(this.colors.length - 1);
-        },
-        //Remove the provided color from the grid
-        removeColorFromGrid(color) {
-            const target = Number(color);
-            for (let rowIndex = 0; rowIndex < this.grid.length; rowIndex++) {
-                for (let colIndex = 0; colIndex < this.grid[rowIndex].length; colIndex++) {
-                    if (Number(this.grid[rowIndex][colIndex]) === target && this.grid[rowIndex][colIndex] !== '') {
-                        this.grid[rowIndex][colIndex] = '';
-                    }
-                }
-            }
-        },
-        updateRows(newRowsString) {
-            const newRowsNumber = Number(newRowsString);
-            if (newRowsNumber >= 3 && newRowsNumber <= 15) {
-                this.gridRows = newRowsNumber;
-            }
-        },
-        updateCols(newColsString) {
-            const newColsNumber = Number(newColsString);
-            if (newColsNumber >= 3 && newColsNumber <= 15) {
-                this.gridColumns = newColsNumber;
-            }
-        },
-        fillColor() {
-            const cells = [];
-            for (let rowIndex = 0; rowIndex < this.grid.length; rowIndex++) {
-                for (let colIndex = 0; colIndex < this.grid[rowIndex].length; colIndex++) {
-                    if (this.grid[rowIndex][colIndex] === '') {
-                        cells.push({
-                            rowIndex,
-                            columnIndex: colIndex,
-                            oldValue: '',
-                        });
-                        this.grid[rowIndex][colIndex] = this.currentColor;
-                    }
-                }
-            }
-            // Un seul undo pour tout le seau
-            if (cells.length > 0) {
-                this.history.push({ cells });
-            }
-        },
-        getShareLink() {
-            return encodeCompactPuzzle({
-                grid: this.grid,
-                gridColumns: this.gridColumns,
-                colors: this.colors,
-                origin: window.location.origin,
-            });
-        },
-        updateShareLink() {
-            this.shareLink = this.getShareLink();
-        },
-        getRandomColor() {
-            let color = "";
-
-            while(color.length < 6) {
-                color = Math.floor(Math.random()*16777215).toString(16);
-                
-            }
-            
-            return '#' + color;
-        },
-        checkVictory() {
-            if(JSON.stringify(this.grid) === JSON.stringify(this.correctGrid)) {
-                this.victory = true;
-                // Ghost click on modal overlay only on mobile. The setTimeout prevents it.
-                // TODO : Find why there's a ghost click on mobile
-                setTimeout(() => {
-                    this.openModal = true;
-                }, 200);
-
-                this.modalTitle = "Bravo !";
-                this.modalMessage = "Tu as réussi à résoudre ce picross !";
-            } else {
-                this.openModal = true;
-                this.modalTitle = "Dommage !";
-                this.modalMessage = "Toutes les cases sont remplies, mais elles ne correspondent pas à la solution. Tu peux fermer cette fenêtre et tenter de corriger !";
-            }
-        },
-        scheduleSolvabilityCheck() {
-            if (!this.editMode || !this.isFilled) {
-                this.solvability = null;
-                this.solvability_loading = false;
-                return;
-            }
-
-            this.solvability_loading = true;
-
-            if (this.solvability_debounce) {
-                clearTimeout(this.solvability_debounce);
-            }
-
-            this.solvability_debounce = setTimeout(() => {
-                this.solvability = checkSolvability({
-                    rows: this.gridRows,
-                    columns: this.gridColumns,
-                    hints: this.hints,
-                    colorCount: this.colors.length
-                });
-                this.solvability_loading = false;
-            }, 300);
-        },
-        switchMode() {
-            this.editMode = true;
-            this.dailyMode = false;
-            this.dailyDateKey = null;
-            this.victory = false;
-            this.clearPuzzleQuery();
-            this.emitDailyState();
-        },
-        enableHypothesisMode() {
-            this.hypothesisMode = true;
-
-            // Save the current grid
-            this.gridBackup = JSON.parse(JSON.stringify(this.grid));
-        },
-        disableHypothesisMode() {
-            this.hypothesisMode = false;
-
-            // Restore the grid
-            this.grid = JSON.parse(JSON.stringify(this.gridBackup));
-
-            // Dump the history
-            this.history = [];
-        },
-        validateHypothesis() {
-            this.hypothesisMode = false;
-
-            // Dump the backup
-            this.gridBackup = [];
-
-            // Replace the grid by itself just to trigger the victory watcher
-            this.grid = JSON.parse(JSON.stringify(this.grid));
-
-        },
-   
+function checkVictory() {
+    if (JSON.stringify(grid.value) === JSON.stringify(correctGrid.value)) {
+        victory.value = true;
+        // Clic fantôme sur l'overlay de la modale seulement sur mobile ; le setTimeout l'évite.
+        // TODO : trouver la cause du clic fantôme sur mobile.
+        setTimeout(() => {
+            openModal.value = true;
+        }, 200);
+        modalTitle.value = 'Bravo !';
+        modalMessage.value = 'Tu as réussi à résoudre ce picross !';
+    } else {
+        openModal.value = true;
+        modalTitle.value = 'Dommage !';
+        modalMessage.value = 'Toutes les cases sont remplies, mais elles ne correspondent pas à la solution. Tu peux fermer cette fenêtre et tenter de corriger !';
     }
 }
+
+// --- Composables dépendant des fonctions transverses ---
+const daily = useDaily({ applyPuzzle, resetPlayState, emitDailyState });
+
+const { shareLink, checkMode, switchMode, updateShareLink } = usePuzzleSource({
+    editMode,
+    colors,
+    seedInitialColors,
+    applyPuzzle,
+    daily,
+    emitDailyState,
+    resetVictory: () => { victory.value = false; },
+    showModal,
+    grid,
+    gridColumns,
+});
+
+// --- Détection de changement par valeur ---
+// Les tableaux étant passés par référence, on stringifie pour diffuser un vrai diff.
+const stringifiedGrid = computed(() => JSON.stringify(grid.value));
+const stringifiedColors = computed(() => JSON.stringify(colors.value));
+
+// --- Fourniture aux descendants (refs réactives + fonctions) ---
+provide('editMode', editMode);
+provide('gridColumns', gridColumns);
+provide('gridRows', gridRows);
+provide('grid', grid);
+provide('colors', colors);
+provide('currentColor', currentColor);
+provide('hints', hints);
+provide('updateGrid', updateGrid);
+provide('updateColors', updateColors);
+provide('updateCurrentColor', updateCurrentColor);
+
+// --- Watchers d'orchestration ---
+// Quand la grille change : met à jour les indices touchés, teste la victoire (jeu)
+// et relance l'analyse de solvabilité (édition).
+watch(stringifiedGrid, (stringNewGrid, stringOldGrid) => {
+    const newGrid = JSON.parse(stringNewGrid);
+    const oldGrid = JSON.parse(stringOldGrid);
+    const gridDiffs = getGridDifferences(newGrid, oldGrid);
+
+    updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
+
+    if (!editMode.value && !hypothesisMode.value && isFilled.value && noErrors.value) {
+        checkVictory();
+    }
+
+    scheduleSolvabilityCheck();
+});
+
+// Un changement de couleurs recalcule tous les indices.
+watch(stringifiedColors, () => {
+    refreshHints();
+    scheduleSolvabilityCheck();
+});
+
+// Un changement de dimensions redimensionne la grille puis recalcule les indices.
+watch(gridRows, (newRows, oldRows) => {
+    if (editMode.value) {
+        resizeGridRows(newRows - oldRows);
+        refreshHints();
+        scheduleSolvabilityCheck();
+    }
+});
+
+watch(gridColumns, (newColumns, oldColumns) => {
+    if (editMode.value) {
+        resizeGridColumns(newColumns - oldColumns);
+        refreshHints();
+        scheduleSolvabilityCheck();
+    }
+});
+
+// --- Cycle de vie ---
+onMounted(() => {
+    checkMode();
+    generateGrid();
+    emitDailyState();
+});
+
+// Exposé pour le parent (App) qui pilote la navigation daily via un ref de composant.
+defineExpose({
+    goToPreviousDaily: daily.goToPreviousDaily,
+    goToNextDaily: daily.goToNextDaily,
+});
 </script>

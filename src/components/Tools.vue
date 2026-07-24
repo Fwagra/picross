@@ -99,118 +99,100 @@
     </template>
     </aside>
 </template>
-<script>
-
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue';
 import ColorTool from './ColorTool.vue';
 import Modal from './Modal.vue';
 
-export default {
-    components: {
-        ColorTool,
-        Modal
-    },
-    emits: ['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory', 'enableHypothesisMode', 'validateHypothesis', 'disableHypothesisMode'],
-    inject: [ 'updateCurrentColor'],
-    props: ['colors', 'currentColor', 'gridRows', 'gridColumns', "isFilled", "shareLink", "editMode", "victory", "hypothesisMode", "solvability", "solvabilityLoading"],
-    computed: {
-        getCurrentColor() {
-            return this.currentColor === '' ? '#FFF' : this.colors[this.currentColor];
-        },
-        shareMessage() {
-            return !this.isFilled ? 'Ce bouton sera disponible quand toute la grille sera remplie' : '';
-        },
-        isEraser() {
-            return this.currentColor === '';
-        },
-        url() {
-            return window.location.origin;
-        },
-        dailyUrl() {
-            return `${window.location.origin}/daily`;
-        },
-        solvabilityMessage() {
-            if (!this.isFilled) return null;
-            if (this.solvabilityLoading) return { text: 'Analyse en cours…', status: 'loading' };
-            if (!this.solvability) return null;
-            if (this.solvability.reason === 'too_complex') {
-                return { text: '… Grille trop complexe à analyser', status: 'loading' };
-            }
-            if (this.solvability.unique) {
-                return { text: '✓ Ce picross a une solution unique', status: 'success' };
-            }
-            if (this.solvability.solutions === 0) {
-                return { text: '✗ Ce picross n\'a aucune solution', status: 'error' };
-            }
-            return { text: '⚠ Ce picross a plusieurs solutions possibles', status: 'warning' };
+const props = defineProps(['colors', 'currentColor', 'gridRows', 'gridColumns', 'isFilled', 'shareLink', 'editMode', 'victory', 'hypothesisMode', 'solvability', 'solvabilityLoading']);
+const emit = defineEmits(['addColor', 'removeColor', 'updateRows', 'updateCols', 'fillColor', 'updateShareLink', 'switchMode', 'clickHistory', 'enableHypothesisMode', 'validateHypothesis', 'disableHypothesisMode']);
+
+const updateCurrentColor = inject('updateCurrentColor');
+
+const share = ref(false);
+const rules = ref(false);
+// Thèmes de fond : chaque clé pilote une palette complète (fond, texte,
+// traits, pastilles) définie dans style.css via [data-theme].
+const themes = ['light', 'mid', 'dim', 'dark'];
+const currentBackground = ref(0);
+
+const shareMessage = computed(() => (!props.isFilled ? 'Ce bouton sera disponible quand toute la grille sera remplie' : ''));
+
+const isEraser = computed(() => props.currentColor === '');
+
+const url = computed(() => window.location.origin);
+
+const dailyUrl = computed(() => `${window.location.origin}/daily`);
+
+const solvabilityMessage = computed(() => {
+    if (!props.isFilled) return null;
+    if (props.solvabilityLoading) return { text: 'Analyse en cours…', status: 'loading' };
+    if (!props.solvability) return null;
+    if (props.solvability.reason === 'too_complex') {
+        return { text: '… Grille trop complexe à analyser', status: 'loading' };
+    }
+    if (props.solvability.unique) {
+        return { text: '✓ Ce picross a une solution unique', status: 'success' };
+    }
+    if (props.solvability.solutions === 0) {
+        return { text: '✗ Ce picross n\'a aucune solution', status: 'error' };
+    }
+    return { text: '⚠ Ce picross a plusieurs solutions possibles', status: 'warning' };
+});
+
+function openShareModal() {
+    emit('updateShareLink');
+    share.value = true;
+}
+
+function changeBackground() {
+    currentBackground.value = (currentBackground.value + 1) % themes.length;
+    document.documentElement.dataset.theme = themes[currentBackground.value];
+}
+
+// Raccourcis clavier.
+// Couleurs : e.code (Digit1–5) pour rester correct en AZERTY
+// (e.key sans Shift donne & é " ' ( sur ces touches).
+function handleKeydowns(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    // Laisse passer les raccourcis navigateur (Ctrl/Cmd+C, etc.)
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const digit = /^Digit([1-5])$/.exec(e.code) || /^Numpad([1-5])$/.exec(e.code);
+    if (digit) {
+        updateCurrentColor(Number(digit[1]) - 1);
+        e.preventDefault();
+        return;
+    }
+
+    const key = e.key.toLowerCase();
+    let handled = true;
+
+    if (key === 'c') {
+        changeBackground();
+    } else if (key === 'e') {
+        updateCurrentColor('');
+    } else if (key === 'z') {
+        emit('clickHistory');
+    } else if (key === 'h') {
+        if (props.hypothesisMode) {
+            emit('disableHypothesisMode');
+        } else {
+            emit('enableHypothesisMode');
         }
-    },
-    created: function() {
-       window.addEventListener('keydown', this.handleKeydowns);
-    },
-    beforeUnmount() {
-        window.removeEventListener('keydown', this.handleKeydowns);
-    },
-    data() {
-        return {
-            share: false,
-            rules: false,
-            // Thèmes de fond : chaque clé pilote une palette complète (fond, texte,
-            // traits, pastilles) définie dans style.css via [data-theme].
-            themes: ['light', 'mid', 'dim', 'dark'],
-            currentBackground: 0,
-        }
-    },
-    methods: {
-        openShareModal() {
-            this.$emit('updateShareLink');
-            this.share = true;
-        },
-        changeBackground() {
-            this.currentBackground = (this.currentBackground + 1) % this.themes.length;
-            document.documentElement.dataset.theme = this.themes[this.currentBackground];
-        },
-        // Keyboard shortcuts
-        // Couleurs : e.code (Digit1–5) pour rester correct en AZERTY
-        // (e.key sans Shift donne & é " ' ( sur ces touches).
-        handleKeydowns(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            // Laisse passer les raccourcis navigateur (Ctrl/Cmd+C, etc.)
-            if (e.ctrlKey || e.metaKey || e.altKey) return;
+    } else if (key === 'v') {
+        emit('validateHypothesis');
+    } else {
+        handled = false;
+    }
 
-            const digit = /^Digit([1-5])$/.exec(e.code) || /^Numpad([1-5])$/.exec(e.code);
-            if (digit) {
-                this.updateCurrentColor(Number(digit[1]) - 1);
-                e.preventDefault();
-                return;
-            }
-
-            const key = e.key.toLowerCase();
-            let handled = true;
-
-            if (key === 'c') {
-                this.changeBackground();
-            } else if (key === 'e') {
-                this.updateCurrentColor('');
-            } else if (key === 'z') {
-                this.$emit('clickHistory');
-            } else if (key === 'h') {
-                if (this.hypothesisMode) {
-                    this.$emit('disableHypothesisMode');
-                } else {
-                    this.$emit('enableHypothesisMode');
-                }
-            } else if (key === 'v') {
-                this.$emit('validateHypothesis');
-            } else {
-                handled = false;
-            }
-
-            if (handled) {
-                e.preventDefault();
-            }
-        },
+    if (handled) {
+        e.preventDefault();
     }
 }
+
+onMounted(() => window.addEventListener('keydown', handleKeydowns));
+onBeforeUnmount(() => window.removeEventListener('keydown', handleKeydowns));
 </script>
 
 

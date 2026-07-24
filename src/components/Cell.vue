@@ -1,55 +1,53 @@
 <template>
-    <div  :class="cellClasses" class="cell grid-cell" v-touch:tap="this.updateCell" v-touch:press="this.press"   v-touch:release="this.release" @mouseover="this.onMouseover" :style="style"></div>
+    <div :class="cellClasses" class="cell grid-cell" :data-row="rowIndex" :data-col="columnIndex" v-touch:tap="updateCell" v-touch:press="press" v-touch:release="release" @mouseover="onMouseover" :style="style"></div>
 </template>
 
-<script>
-export default {
-    inject: ['colors', 'currentColor'],
-    props: ['color', 'rowIndex', 'columnIndex', 'totalRows', 'totalColumns', 'pressed'],
-    computed: {
-        style() {
-            return {
-                backgroundColor: this.colors[this.color]
-            }
-        },
-        cellClasses() {
-            return  {
-                col5: (this.columnIndex +1) % 5 === 0 && this.columnIndex + 1 < this.totalColumns, 
-                row5: (this.rowIndex +1) % 5 === 0 && this.rowIndex + 1 < this.totalRows,
-            }
-        }
-    },
+<script setup>
+import { computed, inject } from 'vue';
 
-    methods: {
-        // Signale le survol (surlignage des indices) puis gère le tracé au drag.
-        onMouseover() {
-            this.$emit('hover', this.rowIndex, this.columnIndex);
-            this.drag();
-        },
-        drag() {
-            if((this.pressed && this.color === '') || (this.pressed &&  this.currentColor === '')) {
-                this.$emit('update-cell', this.rowIndex, this.columnIndex)
-            }
-        },
-        updateCell() {
-            if(!this.pressed) {
-                this.$emit('release');
-                this.$emit('update-cell', this.rowIndex, this.columnIndex);
-            }
-        },
-        press() {
-            document.documentElement.style.overflow = 'hidden';
+const props = defineProps(['color', 'rowIndex', 'columnIndex', 'totalRows', 'totalColumns', 'pressed']);
+const emit = defineEmits(['hover', 'update-cell', 'release', 'press']);
 
-            this.$emit('press');
-            this.$emit('update-cell', this.rowIndex, this.columnIndex);
+const colors = inject('colors');
+const currentColor = inject('currentColor');
 
-        },
-        release() {
-            this.$emit('release');
-            document.documentElement.style.overflow = 'auto';
+const style = computed(() => ({
+    backgroundColor: colors.value[props.color],
+}));
 
-        }
+const cellClasses = computed(() => ({
+    col5: (props.columnIndex + 1) % 5 === 0 && props.columnIndex + 1 < props.totalColumns,
+    row5: (props.rowIndex + 1) % 5 === 0 && props.rowIndex + 1 < props.totalRows,
+}));
+
+// Signale le survol (surlignage des indices) puis gère le tracé au drag.
+function onMouseover() {
+    emit('hover', props.rowIndex, props.columnIndex);
+    drag();
+}
+
+function drag() {
+    if ((props.pressed && props.color === '') || (props.pressed && currentColor.value === '')) {
+        emit('update-cell', props.rowIndex, props.columnIndex);
     }
+}
+
+function updateCell() {
+    if (!props.pressed) {
+        emit('release');
+        emit('update-cell', props.rowIndex, props.columnIndex);
+    }
+}
+
+function press() {
+    document.documentElement.style.overflow = 'hidden';
+    emit('press');
+    emit('update-cell', props.rowIndex, props.columnIndex);
+}
+
+function release() {
+    emit('release');
+    document.documentElement.style.overflow = 'auto';
 }
 </script>
 <style scoped>

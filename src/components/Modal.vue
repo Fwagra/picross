@@ -17,20 +17,23 @@
     </transition>
 </template>
 
-<script>
-export default {
-    props: ['title', 'type', 'shareLink', 'message'],
-    methods: {
-        close() {
-            this.$emit('close');
-        }
-    },
-    mounted() {
-        if(this.type == 'link') {
-            this.$refs.input.select();
-        }
-    }
+<script setup>
+import { ref, onMounted } from 'vue';
+
+const props = defineProps(['title', 'type', 'shareLink', 'message']);
+const emit = defineEmits(['close']);
+
+const input = ref(null);
+
+function close() {
+    emit('close');
 }
+
+onMounted(() => {
+    if (props.type == 'link') {
+        input.value.select();
+    }
+});
 </script>
 
 <style scoped>

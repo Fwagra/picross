@@ -6,6 +6,5 @@ import 'tippy.js/dist/tippy.css';
 
 const app = createApp(App);
 app.use(VueTippy);
-app.config.unwrapInjectedRef = true;
 app.use(Vue3TouchEvents);
 app.mount('#app');
