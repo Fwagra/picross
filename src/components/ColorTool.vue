@@ -10,15 +10,16 @@
     </transition>
 </template>
 
-<script>
-export default {
-    inject: ['updateColors', 'updateCurrentColor'],
-    props: ['color', 'colorIndex', 'editMode', 'current'],
-    methods: {
-        changedColor (event) {
-            this.updateColors(event.target.dataset.color, event.target.value);
-        }
-    },
+<script setup>
+import { inject } from 'vue';
+
+defineProps(['color', 'colorIndex', 'editMode', 'current']);
+
+const updateColors = inject('updateColors');
+const updateCurrentColor = inject('updateCurrentColor');
+
+function changedColor(event) {
+    updateColors(event.target.dataset.color, event.target.value);
 }
 </script>
 

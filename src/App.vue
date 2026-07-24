@@ -37,44 +37,37 @@
   </main>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from 'vue';
 import Game from './components/Game.vue';
 import './assets/style.css';
 
-export default {
-  name: 'App',
-  components: {
-    Game
-  },
-  data() {
-    return {
-      dailyMode: false,
-      dailyDateKey: null,
-      canGoPreviousDaily: false,
-      canGoNextDaily: false,
-    };
-  },
-  computed: {
-    dailyDateLabel() {
-      if (!this.dailyDateKey) return '';
-      const [year, month, day] = this.dailyDateKey.split('-');
-      return `${day}/${month}/${year}`;
-    },
-  },
-  methods: {
-    onDailyState({ dailyMode, dailyDateKey, canGoPreviousDaily, canGoNextDaily }) {
-      this.dailyMode = dailyMode;
-      this.dailyDateKey = dailyDateKey;
-      this.canGoPreviousDaily = canGoPreviousDaily;
-      this.canGoNextDaily = canGoNextDaily;
-    },
-    goToPreviousDaily() {
-      this.$refs.game?.goToPreviousDaily();
-    },
-    goToNextDaily() {
-      this.$refs.game?.goToNextDaily();
-    },
-  },
+const game = ref(null);
+
+const dailyMode = ref(false);
+const dailyDateKey = ref(null);
+const canGoPreviousDaily = ref(false);
+const canGoNextDaily = ref(false);
+
+const dailyDateLabel = computed(() => {
+  if (!dailyDateKey.value) return '';
+  const [year, month, day] = dailyDateKey.value.split('-');
+  return `${day}/${month}/${year}`;
+});
+
+function onDailyState(state) {
+  dailyMode.value = state.dailyMode;
+  dailyDateKey.value = state.dailyDateKey;
+  canGoPreviousDaily.value = state.canGoPreviousDaily;
+  canGoNextDaily.value = state.canGoNextDaily;
+}
+
+function goToPreviousDaily() {
+  game.value?.goToPreviousDaily();
+}
+
+function goToNextDaily() {
+  game.value?.goToNextDaily();
 }
 </script>
 

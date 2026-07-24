@@ -4,33 +4,24 @@
     </div>
 </template>
 
-<script>
-
+<script setup>
+import { ref, computed, onMounted, onUpdated } from 'vue';
 import ColorHint from './ColorHint.vue';
 
-export default {
-    props: ['hint','error', 'type', 'highlight'],
-    components: {
-        ColorHint
-    },
-    computed: {
-        errorTip() {
-            return this.error ? 'Les couleurs ne correspondent pas aux indices' : '';
-        }
-    },
-    updated() {
-        // Update the width of the fake cell in the header each time the left column changes
-        this.updateFauxCell();
-    },
-    mounted() {
-        this.updateFauxCell();
-    },
-    methods: {
-        updateFauxCell() {
-           this.$emit('updateFauxCell', this.$refs.cell.clientWidth);
-        }
-    }
+const props = defineProps(['hint', 'error', 'type', 'highlight']);
+const emit = defineEmits(['updateFauxCell']);
+
+const cell = ref(null);
+
+const errorTip = computed(() => (props.error ? 'Les couleurs ne correspondent pas aux indices' : ''));
+
+// Remonte la largeur de la case d'indices pour aligner la fausse cellule du coin.
+function updateFauxCell() {
+    emit('updateFauxCell', cell.value.clientWidth);
 }
+
+onMounted(updateFauxCell);
+onUpdated(updateFauxCell);
 </script>
 
 <style scoped>

@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import Grid from './Grid.vue';
 import Cell from './Cell.vue';
@@ -7,10 +8,10 @@ import { withGlobal } from '../test-helpers/mountOptions.js';
 
 // Grille 2x2 vide + indices bien formés pour que Hints/ColorHint se montent.
 function mountGrid({ updateGrid = vi.fn(), currentColor = 0, victory = false } = {}) {
-  const gridData = [
+  const gridData = ref([
     ['', ''],
     ['', ''],
-  ];
+  ]);
   const wrapper = mount(Grid, {
     props: {
       gridRows: 2,
@@ -24,8 +25,8 @@ function mountGrid({ updateGrid = vi.fn(), currentColor = 0, victory = false } =
       provide: {
         grid: gridData,
         updateGrid,
-        currentColor,
-        colors: ['#ff0000', '#00ff00'],
+        currentColor: ref(currentColor),
+        colors: ref(['#ff0000', '#00ff00']),
       },
     }),
   });

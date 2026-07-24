@@ -33,7 +33,6 @@
 
                     <template v-for="(row, rowIndex) in grid" :key="rowIndex">
                         <Cell
-                        :ref="'cell-' + rowIndex + columnIndex"
                         v-for="(column, columnIndex) in row"
                         @updateCell="updateGrid"
                         @press="press"
@@ -55,93 +54,90 @@
 </template>
 
 
-<script>
+<script setup>
+import { ref, computed } from 'vue';
+import { inject } from 'vue';
 import Cell from './Cell.vue';
 import Hints from './Hints.vue';
-export default {
-    components: {
-        Cell,
-        Hints
-    },
-    inject: [ 'grid', 'updateGrid', 'currentColor'],
-    emits: ['updateGrid'],
-    props: ['gridRows',  'gridColumns','colors', 'hints', 'errors', 'victory'],
-    data() {
-        return {
-            fauxCellWidth: 0,
-            pressed: false,
-            lastMobileDragTime: 0,
-            // Cellule survolée : sert à surligner sa ligne/colonne pour la lecture.
-            hoveredRow: null,
-            hoveredColumn: null,
-        }
-    },
-    computed: {
-        gridStyles() {
-            return {
-                gridTemplateColumns: `repeat(${this.gridColumns}, 1fr)`,
-                gridTemplateRows: `repeat(${this.gridRows}, 1fr)`,
-                flex: this.gridColumns,
-            }
-        },
-        // Largeur mesurée sur les indices de ligne — aligne le coin supérieur gauche.
-        fauxCellStyles() {
-            return this.fauxCellWidth
-                ? { width: this.fauxCellWidth + 'px', minWidth: this.fauxCellWidth + 'px' }
-                : {};
-        },
-        headStyles() {
-            return {
-                flex: this.gridColumns,
-            }
-        }
-    },
 
+const props = defineProps(['gridRows', 'gridColumns', 'colors', 'hints', 'errors', 'victory']);
+const emit = defineEmits(['update-cell']);
 
-    methods: {
-       updateFauxCell(width) {
-            this.fauxCellWidth = width;
-        },
-        press() {
-            this.pressed = true;
-        },
-        release() {
-            this.pressed = false;
-        },
-        // Mémorise la cellule survolée pour surligner sa ligne et sa colonne.
-        hover(rowIndex, columnIndex) {
-            this.hoveredRow = rowIndex;
-            this.hoveredColumn = columnIndex;
-        },
-        // Quitte la grille : relâche le tracé et coupe le surlignage.
-        onGridLeave() {
-            this.release();
-            this.hoveredRow = null;
-            this.hoveredColumn = null;
-        },
-        // Throttle tactile : l'ancien « debounce » recréait une fermeture à chaque
-        // touchmove, donc le délai n'était jamais respecté.
-        debouncedMobileDrag(e) {
-            if (this.victory) return;
-            const now = Date.now();
-            if (now - this.lastMobileDragTime < 200) return;
-            this.lastMobileDragTime = now;
-            this.mobileDrag(e);
-        },
+const grid = inject('grid');
+const updateGrid = inject('updateGrid');
+const currentColor = inject('currentColor');
 
-        mobileDrag(e) {
-            let position = e.touches[0];
-            let el = document.elementFromPoint(position.clientX, position.clientY);
-            let cell;
-            for (let currentCell in this.$refs) {
-                if (this.$refs[currentCell][0].$el === el) {
-                    cell = this.$refs[currentCell][0];
-                }
-            }
-            if (cell && (cell.color === '' || this.currentColor === '' )) {
-                this.$emit('update-cell', cell.rowIndex, cell.columnIndex);
-            }
-        }
+const fauxCellWidth = ref(0);
+const pressed = ref(false);
+const lastMobileDragTime = ref(0);
+// Cellule survolée : sert à surligner sa ligne/colonne pour la lecture.
+const hoveredRow = ref(null);
+const hoveredColumn = ref(null);
+
+const gridStyles = computed(() => ({
+    gridTemplateColumns: `repeat(${props.gridColumns}, 1fr)`,
+    gridTemplateRows: `repeat(${props.gridRows}, 1fr)`,
+    flex: props.gridColumns,
+}));
+
+// Largeur mesurée sur les indices de ligne — aligne le coin supérieur gauche.
+const fauxCellStyles = computed(() =>
+    fauxCellWidth.value
+        ? { width: fauxCellWidth.value + 'px', minWidth: fauxCellWidth.value + 'px' }
+        : {}
+);
+
+const headStyles = computed(() => ({ flex: props.gridColumns }));
+
+function updateFauxCell(width) {
+    fauxCellWidth.value = width;
+}
+
+function press() {
+    pressed.value = true;
+}
+
+function release() {
+    pressed.value = false;
+}
+
+// Mémorise la cellule survolée pour surligner sa ligne et sa colonne.
+function hover(rowIndex, columnIndex) {
+    hoveredRow.value = rowIndex;
+    hoveredColumn.value = columnIndex;
+}
+
+// Quitte la grille : relâche le tracé et coupe le surlignage.
+function onGridLeave() {
+    release();
+    hoveredRow.value = null;
+    hoveredColumn.value = null;
+}
+
+// Throttle tactile : l'ancien « debounce » recréait une fermeture à chaque
+// touchmove, donc le délai n'était jamais respecté.
+function debouncedMobileDrag(e) {
+    if (props.victory) return;
+    const now = Date.now();
+    if (now - lastMobileDragTime.value < 200) return;
+    lastMobileDragTime.value = now;
+    mobileDrag(e);
+}
+
+// Tracé tactile : on retrouve la case sous le doigt via les data-attrs du DOM
+// (plus de refs dynamiques). La couleur est lue directement dans la grille.
+function mobileDrag(e) {
+    const position = e.touches[0];
+    const el = document.elementFromPoint(position.clientX, position.clientY);
+    const cellEl = el ? el.closest('.grid-cell') : null;
+    if (!cellEl) return;
+
+    const rowIndex = Number(cellEl.dataset.row);
+    const columnIndex = Number(cellEl.dataset.col);
+    const color = grid.value[rowIndex]?.[columnIndex];
+
+    if (color === '' || currentColor.value === '') {
+        emit('update-cell', rowIndex, columnIndex);
     }
 }
 </script>

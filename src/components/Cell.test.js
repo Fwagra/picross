@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import Cell from './Cell.vue';
 import { withGlobal } from '../test-helpers/mountOptions.js';
@@ -15,7 +16,7 @@ function mountCell(props, currentColor = 0) {
       pressed: false,
       ...props,
     },
-    ...withGlobal({ provide: { colors: ['#ff0000', '#00ff00'], currentColor } }),
+    ...withGlobal({ provide: { colors: ref(['#ff0000', '#00ff00']), currentColor: ref(currentColor) } }),
   });
 }
 

@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
+import { ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import ColorHint from './ColorHint.vue';
 import { withGlobal } from '../test-helpers/mountOptions.js';
 
-// Monte ColorHint avec l'inject `colors` requis.
+// Monte ColorHint avec l'inject `colors` (fourni comme ref, comme le fait Game).
 function mountColorHint(props) {
   return mount(ColorHint, {
     props,
-    ...withGlobal({ provide: { colors: ['#ff0000', '#00ff00'] } }),
+    ...withGlobal({ provide: { colors: ref(['#ff0000', '#00ff00']) } }),
   });
 }
 
