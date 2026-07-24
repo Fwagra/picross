@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getAvailableDailyDateKeys,
   getTodayKey,
   isDailyPath,
   normalizeDailyPayload,
@@ -81,6 +82,30 @@ describe('pickDailyPuzzle', () => {
   it('retourne null si aucune date n’est disponible', () => {
     expect(pickDailyPuzzle({}, '2026-07-22')).toBeNull();
     expect(resolveCalendarDateKey({ '2026-07-23': [samplePayload] }, '2026-07-22')).toBeNull();
+  });
+});
+
+describe('getAvailableDailyDateKeys', () => {
+  const calendar = {
+    '2026-07-20': [samplePayload],
+    '2026-07-22': [samplePayload, otherPayload],
+    '2026-07-25': [samplePayload],
+    '2026-07-26': [],
+  };
+
+  it('liste les dates jouables ≤ à la date demandée, triées', () => {
+    expect(getAvailableDailyDateKeys(calendar, '2026-07-24')).toEqual([
+      '2026-07-20',
+      '2026-07-22',
+    ]);
+  });
+
+  it('ignore les entrées vides et les dates futures', () => {
+    expect(getAvailableDailyDateKeys(calendar, '2026-07-26')).toEqual([
+      '2026-07-20',
+      '2026-07-22',
+      '2026-07-25',
+    ]);
   });
 });
 

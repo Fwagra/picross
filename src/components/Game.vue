@@ -35,7 +35,7 @@ import { computed } from 'vue';
 import { checkSolvability } from '../solver.js';
 import { computeHints as buildHints, getHints as buildLineHints, getHintsForColor } from '../hints.js';
 import { decodeCompactPuzzle, decodeLegacyPuzzle, encodeCompactPuzzle } from '../puzzleUrl.js';
-import { getTodayKey, isDailyPath, loadDailyForDate } from '../daily.js';
+import { getAvailableDailyDateKeys, getTodayKey, isDailyPath, loadDailyForDate } from '../daily.js';
 
 export default {
     components: {
@@ -49,6 +49,7 @@ export default {
             editMode: true,
             dailyMode: false,
             dailyDateKey: null,
+            dailyDateKeys: [],
             hypothesisMode: false,
             gridColumns: 5,
             gridRows: 5,
@@ -94,6 +95,18 @@ export default {
         noErrors() {
             return this.errors.rows.every(error => error !== true)
                 && this.errors.columns.every(error => error !== true);
+        },
+        // Position de la date courante dans la liste des daily jouables.
+        dailyIndex() {
+            return this.dailyDateKeys.indexOf(this.dailyDateKey);
+        },
+        // Existe-t-il une grille daily plus ancienne (flèche gauche) ?
+        canGoPreviousDaily() {
+            return this.dailyMode && this.dailyIndex > 0;
+        },
+        // Existe-t-il une grille daily plus récente (flèche droite) ?
+        canGoNextDaily() {
+            return this.dailyMode && this.dailyIndex !== -1 && this.dailyIndex < this.dailyDateKeys.length - 1;
         },
     },
     provide() {
@@ -217,6 +230,8 @@ export default {
             this.$emit('daily-state', {
                 dailyMode: this.dailyMode,
                 dailyDateKey: this.dailyDateKey,
+                canGoPreviousDaily: this.canGoPreviousDaily,
+                canGoNextDaily: this.canGoNextDaily,
             });
         },
         // Retire ?p= / ?g= pour qu'un refresh ne relance pas le mode jeu.
@@ -271,15 +286,53 @@ export default {
         },
         // Charge le daily du jour depuis le calendrier embarqué.
         loadDailyPuzzle() {
+            this.dailyDateKeys = getAvailableDailyDateKeys();
+            return this.loadDailyForKey(getTodayKey());
+        },
+        // Charge (sans réinitialiser) la grille daily d'une date donnée.
+        // La date affichée est la date réelle de la grille (resolvedDateKey).
+        loadDailyForKey(dateKey) {
             try {
-                const puzzle = loadDailyForDate(getTodayKey());
+                const puzzle = loadDailyForDate(dateKey);
                 this.applyPuzzle(puzzle);
-                this.dailyDateKey = puzzle.dateKey;
+                this.dailyDateKey = puzzle.resolvedDateKey;
                 return true;
             } catch (e) {
                 console.error('Impossible de charger le daily', e);
                 return false;
             }
+        },
+        // Navigue vers une autre date daily : recharge la grille et remet à zéro la partie.
+        navigateDaily(dateKey) {
+            if (!this.loadDailyForKey(dateKey)) {
+                return;
+            }
+            this.resetPlayState();
+            this.emitDailyState();
+        },
+        // Flèche gauche : grille daily précédente (plus ancienne).
+        goToPreviousDaily() {
+            if (this.canGoPreviousDaily) {
+                this.navigateDaily(this.dailyDateKeys[this.dailyIndex - 1]);
+            }
+        },
+        // Flèche droite : grille daily suivante (plus récente).
+        goToNextDaily() {
+            if (this.canGoNextDaily) {
+                this.navigateDaily(this.dailyDateKeys[this.dailyIndex + 1]);
+            }
+        },
+        // Remet la partie à zéro pour la nouvelle grille daily chargée.
+        resetPlayState() {
+            this.victory = false;
+            this.openModal = false;
+            this.history = [];
+            this.hypothesisMode = false;
+            this.gridBackup = [];
+            this.errors = { rows: [], columns: [] };
+            this.currentColor = 0;
+            this.grid = [];
+            this.generateGrid();
         },
         // Recalcule les indices (lignes et colonnes) à partir d'une grille de solution
         computeHints(grid) {

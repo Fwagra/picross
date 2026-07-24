@@ -458,6 +458,57 @@ div.tippy-box {
     left: -2px;
   }
 
+  /* Flèches de navigation (css.gg : arrow-left / arrow-right). */
+  .gg-arrow-left,
+  .gg-arrow-right {
+    box-sizing: border-box;
+    position: relative;
+    display: block;
+    transform: scale(var(--ggs, 1));
+    width: 22px;
+    height: 22px;
+  }
+  .gg-arrow-left::after,
+  .gg-arrow-left::before,
+  .gg-arrow-right::after,
+  .gg-arrow-right::before {
+    content: "";
+    display: block;
+    box-sizing: border-box;
+    position: absolute;
+  }
+  .gg-arrow-left::after,
+  .gg-arrow-left::before {
+    left: 3px;
+  }
+  .gg-arrow-right::after,
+  .gg-arrow-right::before {
+    right: 3px;
+  }
+  .gg-arrow-left::after {
+    width: 8px;
+    height: 8px;
+    border-bottom: 2px solid;
+    border-left: 2px solid;
+    transform: rotate(45deg);
+    bottom: 7px;
+  }
+  .gg-arrow-right::after {
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid;
+    border-right: 2px solid;
+    transform: rotate(45deg);
+    top: 7px;
+  }
+  .gg-arrow-left::before,
+  .gg-arrow-right::before {
+    width: 16px;
+    height: 2px;
+    bottom: 10px;
+    background: currentColor;
+  }
+
   
 @media screen and (min-width: 1100px) {
     main {

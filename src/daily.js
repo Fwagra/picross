@@ -64,6 +64,16 @@ export function resolveCalendarDateKey(calendarMap, dateKey) {
 }
 
 /**
+ * Liste triée (ordre croissant) des dates daily jouables :
+ * une entrée valide et une date ≤ à celle demandée (aujourd'hui par défaut).
+ */
+export function getAvailableDailyDateKeys(calendarMap = calendar, dateKey = getTodayKey()) {
+    return Object.keys(calendarMap)
+        .filter(key => key <= dateKey && Array.isArray(calendarMap[key]) && calendarMap[key].length > 0)
+        .sort();
+}
+
+/**
  * Choisit le payload du jour (déterministe si plusieurs).
  * @returns {{ dateKey: string, resolvedDateKey: string, payload: string } | null}
  */

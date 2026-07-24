@@ -4,10 +4,36 @@
       <h1>Color Picross</h1>
       <span v-if="dailyMode" class="daily-badge">Daily</span>
     </div>
-    <p v-if="dailyMode && dailyDateLabel" class="daily-date">{{ dailyDateLabel }}</p>
+    <div v-if="dailyMode && dailyDateLabel" class="daily-nav">
+      <span class="daily-nav-inner">
+        <p class="daily-date">{{ dailyDateLabel }}</p>
+        <button
+          type="button"
+          class="daily-arrow daily-arrow-prev"
+          :class="{ disabled: !canGoPreviousDaily }"
+          :disabled="!canGoPreviousDaily"
+          aria-label="Grille précédente"
+          title="Grille précédente"
+          @click="goToPreviousDaily"
+        >
+          <i class="gg-arrow-left"></i>
+        </button>
+        <button
+          type="button"
+          class="daily-arrow daily-arrow-next"
+          :class="{ disabled: !canGoNextDaily }"
+          :disabled="!canGoNextDaily"
+          aria-label="Grille suivante"
+          title="Grille suivante"
+          @click="goToNextDaily"
+        >
+          <i class="gg-arrow-right"></i>
+        </button>
+      </span>
+    </div>
   </header>
   <main>
-    <Game @daily-state="onDailyState"></Game>
+    <Game ref="game" @daily-state="onDailyState"></Game>
   </main>
 </template>
 
@@ -24,6 +50,8 @@ export default {
     return {
       dailyMode: false,
       dailyDateKey: null,
+      canGoPreviousDaily: false,
+      canGoNextDaily: false,
     };
   },
   computed: {
@@ -34,9 +62,17 @@ export default {
     },
   },
   methods: {
-    onDailyState({ dailyMode, dailyDateKey }) {
+    onDailyState({ dailyMode, dailyDateKey, canGoPreviousDaily, canGoNextDaily }) {
       this.dailyMode = dailyMode;
       this.dailyDateKey = dailyDateKey;
+      this.canGoPreviousDaily = canGoPreviousDaily;
+      this.canGoNextDaily = canGoNextDaily;
+    },
+    goToPreviousDaily() {
+      this.$refs.game?.goToPreviousDaily();
+    },
+    goToNextDaily() {
+      this.$refs.game?.goToNextDaily();
     },
   },
 }
@@ -77,10 +113,56 @@ h1 {
   transform: scale(var(--ggs, 1)) translateY(-0.05em);
 }
 
-.daily-date {
+/* Bloc pleine largeur : la date reste sous le titre, centrée comme avant. */
+.daily-nav {
   margin: 0 0 1.5rem;
+}
+
+/* Wrapper interne dimensionné sur la date : les flèches sont positionnées
+   en absolu autour d'elle pour ne pas la décaler de sa position centrée. */
+.daily-nav-inner {
+  position: relative;
+  display: inline-block;
+}
+
+.daily-date {
+  margin: 0;
   font-size: 1.8rem;
   line-height: 1;
   color: var(--grid-dark);
+}
+
+.daily-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--grid-dark);
+  cursor: pointer;
+  transition: background-color .2s, opacity .2s;
+}
+.daily-arrow-prev {
+  right: 100%;
+}
+.daily-arrow-next {
+  left: 100%;
+}
+.daily-arrow:hover {
+  background: var(--grid-separations);
+}
+.daily-arrow.disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+.daily-arrow.disabled:hover {
+  background: transparent;
 }
 </style>
