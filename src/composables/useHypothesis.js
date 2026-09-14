@@ -22,8 +22,6 @@ export function useHypothesis({ grid, history }) {
     function validateHypothesis() {
         hypothesisMode.value = false;
         gridBackup.value = [];
-        // Remplace la grille par elle-même pour déclencher le watcher de victoire.
-        grid.value = JSON.parse(JSON.stringify(grid.value));
     }
 
     return {

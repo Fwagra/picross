@@ -177,4 +177,41 @@ describe('Game — mode jeu (?p=)', () => {
     expect(tools(wrapper).props('victory')).toBe(true);
     vi.useRealTimers();
   });
+
+  it('émet la victoire quand la grille est terminée puis l’hypothèse validée', async () => {
+    vi.useFakeTimers();
+    const wrapper = mount(Game, {
+      ...withGlobal({ stubs: { Grid: true, Tools: true, Modal: true } }),
+    });
+    await vi.runOnlyPendingTimersAsync();
+
+    tools(wrapper).vm.$emit('enableHypothesisMode');
+    await vi.runOnlyPendingTimersAsync();
+
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 2; c++) {
+        grid(wrapper).vm.$emit('updateCell', r, c);
+      }
+    }
+    await vi.runOnlyPendingTimersAsync();
+
+    // La victoire attend la validation de l'hypothèse.
+    expect(grid(wrapper).props('victory')).toBe(false);
+
+    tools(wrapper).vm.$emit('validateHypothesis');
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(grid(wrapper).props('victory')).toBe(true);
+    expect(tools(wrapper).props('victory')).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it('ignore une validation d’hypothèse hors mode hypothèse', async () => {
+    const wrapper = await mountGame();
+    tools(wrapper).vm.$emit('validateHypothesis');
+    await flushPromises();
+
+    expect(tools(wrapper).props('hypothesisMode')).toBe(false);
+    expect(grid(wrapper).props('victory')).toBe(false);
+  });
 });

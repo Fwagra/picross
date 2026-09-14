@@ -21,7 +21,7 @@
            @clickHistory="moveBackFromHistory"
            @enableHypothesisMode="enableHypothesisMode"
            @disableHypothesisMode="disableHypothesisMode"
-           @validateHypothesis="validateHypothesis"
+           @validateHypothesis="confirmHypothesis"
     ></Tools>
     <Modal :title="modalTitle" :message="modalMessage"  @close="openModal = false"  :type="'message'" v-if="openModal"></Modal>
 </template>
@@ -126,6 +126,25 @@ function moveBackFromHistory() {
     undoLastMove(victory.value);
 }
 
+// La grille jouée est complète et cohérente : on peut trancher.
+function shouldCheckVictory() {
+    return !editMode.value && !hypothesisMode.value && isFilled.value && noErrors.value;
+}
+
+// Valider l'hypothèse ne modifie pas la grille : le watcher ne se déclenche pas,
+// il faut donc tester la victoire ici pour une grille terminée sous hypothèse.
+function confirmHypothesis() {
+    if (!hypothesisMode.value) {
+        return;
+    }
+
+    validateHypothesis();
+
+    if (shouldCheckVictory()) {
+        checkVictory();
+    }
+}
+
 function checkVictory() {
     if (JSON.stringify(grid.value) === JSON.stringify(correctGrid.value)) {
         victory.value = true;
@@ -186,7 +205,7 @@ watch(stringifiedGrid, (stringNewGrid, stringOldGrid) => {
 
     updateHints(gridDiffs.rowsToUpdate, gridDiffs.columnsToUpdate);
 
-    if (!editMode.value && !hypothesisMode.value && isFilled.value && noErrors.value) {
+    if (shouldCheckVictory()) {
         checkVictory();
     }
 
